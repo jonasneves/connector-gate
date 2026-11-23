@@ -1,0 +1,16 @@
+# Podman Quadlet unit: systemd --user runs the app container on the Duke VM and restarts it at boot.
+[Unit]
+Description=Connector gate (Gradio app)
+
+[Container]
+Image=localhost/connector-gate:latest
+PublishPort=127.0.0.1:8081:7860
+EnvironmentFile=%h/connector-gate/.env
+# The VM has 3.3 GiB shared with other projects; PyTorch with DistilBERT needs about 1 GiB.
+PodmanArgs=--memory=1500m
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=default.target

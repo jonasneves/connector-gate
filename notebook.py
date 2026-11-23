@@ -37,7 +37,7 @@
 # scoped credentials and does not replace them.
 #
 # **AI use.** Claude Code (Claude Opus 5.5) wrote this notebook and `data.py`, `gate.py`,
-# `decision.py`, `app.py` and `space.py` on November 22, 2026.
+# `decision.py` and `app.py` on November 22, 2026.
 
 # %%
 import json

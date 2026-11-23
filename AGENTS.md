@@ -150,23 +150,24 @@ Requires [uv](https://docs.astral.sh/uv/) and Python 3.12 or later. Run the step
    uv run app.py
    ```
 
-5. Build and run the same app as the container the Space uses.
+5. Build and run the same app as the container the deployment uses.
 
    ```sh
    docker build -t connector-gate .
    docker run -p 7860:7860 connector-gate
    ```
 
-6. Publish the app as a Hugging Face Docker Space. With `TYPESAFE_API_KEY` set, the key is stored as a Space secret.
+6. Deploy to the Duke VM (needs SSH access to it). The script copies the app and the saved models, builds the image there with rootless Podman and restarts the service. With `TYPESAFE_API_KEY` set, the key is written to an owner-only file on the VM.
 
    ```sh
-   hf auth login
-   TYPESAFE_API_KEY=... uv run space.py <user>/connector-gate
+   TYPESAFE_API_KEY=... ./deploy.sh
    ```
 
 ## Deployment
 
-Deployed Space: SPACE_URL_PENDING
+Live app: <https://connector-gate.colab.duke.edu>
+
+The container runs on a Duke VCM virtual machine (2 vCPU, 3.3 GiB, shared with another project) as a Podman Quadlet user service (`connector-gate.container`): port 7860 published on `127.0.0.1:8081`, memory limited to 1.5 GiB, restarted on failure and at boot. Caddy on the VM terminates TLS and routes the hostname to that port; its configuration is in `jonasneves/infra` under `duke/`. A VCM reservation lasts one semester and has no uptime guarantee. Hugging Face Spaces was not used because Docker and Gradio Spaces on the free CPU tier required a paid subscription (November 2026).
 
 The app accepts a JSON tool list (one decision per tool description) or any other text such as a `SKILL.md` (one decision). It shows the decision, score, threshold, latency and length per item. It rejects pasted text over 60,000 characters or 75 chunks and handles one request at a time.
 
@@ -180,9 +181,9 @@ The app accepts a JSON tool list (one decision per tool description) or any othe
 | `gate.py` | Chunking, scoring, model loaders, `QUESTION` and `EVASION_NOTE`. Shared by the notebook and the app. |
 | `decision.py` | Client for the two hosted decision models. |
 | `app.py` | Gradio app. |
-| `space.py` | Publishes the app, the scoring code and the saved models to a Hugging Face Space. |
+| `deploy.sh`, `connector-gate.container` | Deploys the app to the Duke VM, and the Quadlet unit that runs the container there. |
 | `slides.pptx` | Project slides. |
-| `Dockerfile`, `requirements.txt` | The Space's image, with CPU-only PyTorch and pinned versions. |
+| `Dockerfile`, `requirements.txt` | The app's image, with CPU-only PyTorch and pinned versions. |
 | `pyproject.toml`, `uv.lock` | The development environment. |
 | `data/` | `sets.parquet` and the raw downloads (`data/raw/`, not committed). |
 | `models/` | `baseline.joblib`, `thresholds.json` and `distilbert/` (not committed; step 3 writes it). |
@@ -192,4 +193,4 @@ The app accepts a JSON tool list (one decision per tool description) or any othe
 
 ## AI use
 
-Claude Code (Claude Opus 5.5) wrote the code (including `space.py`), the notebook, the slides (`slides.pptx`) and this document on November 22, 2026.
+Claude Code (Claude Opus 5.5) wrote the code (including `deploy.sh`), the notebook, the slides (`slides.pptx`) and this document on November 22, 2026.

@@ -1,4 +1,4 @@
-# The image a Hugging Face Docker Space builds: the app, the scoring code and the two saved models.
+# The app, the scoring code and the two saved models, serving Gradio on port 7860.
 FROM python:3.13-slim
 RUN useradd -m -u 1000 user
 USER user
