@@ -57,7 +57,7 @@ When a provider's input filter refuses a text, the text is counted as blocked (s
 
 Evasion test: one fixed sentence addressed to the detector (`EVASION_NOTE` in `gate.py`) is appended to every malicious MCP description, and each model scores the result at its unchanged thresholds.
 
-Latency: the local models are timed on the development machine over 200 MCP descriptions, one at a time. The hosted models report the request time that `decision.py` recorded, network included.
+Latency: the local models are timed on the development machine over 200 MCP descriptions, one at a time. The hosted models report the time of each request that `decision.py` recorded, network included; one request carries one chunk.
 
 ## Results
 
@@ -91,12 +91,12 @@ Evasion test on the 485 malicious MCP descriptions, without and with the appende
 | Jev 1.14 | 0.580 | 0.750 | 1.9% | 1.4% | 57.7% | 84.7% |
 | Gemini Decision 1 | 0.765 | 0.841 | 9.1% | 0.2% | 64.7% | 73.4% |
 
-Latency per request, and cost where the notebook prices it (Jev 1.14 at $0.042 per million input tokens):
+Latency per MCP description for the local models and per chunk for the hosted ones, and cost where the notebook prices it (Jev 1.14 at $0.042 per million input tokens):
 
-| Model | Median ms | p95 ms | Median input tokens | USD per 1,000 requests |
+| Model | Median ms | p95 ms | Median input tokens | USD per 1,000 chunks |
 |---|---|---|---|---|
-| logistic regression | 0.3 | 0.5 | | |
-| DistilBERT | 7.0 | 9.5 | | |
+| logistic regression | 0.3 | 0.4 | | |
+| DistilBERT | 6.6 | 10.1 | | |
 | Jev 1.14 | 57.5 | 88.2 | 428 | 0.018 |
 | Gemini Decision 1 | 187.8 | 379.8 | 243 | |
 
@@ -104,13 +104,13 @@ Figures are in `results/figures/`: `roc.png`, `recall-fpr.png`, `recall-fpr-half
 
 ## Findings
 
-1. On the primary test split both trained models reach AUROC above 0.99, and at the validation threshold each blocks 90% of attacks and under 1% of benign prompts.
-2. Neither trained model transfers to the secondary sets, where their AUROC is 0.60 to 0.82. At its validation threshold DistilBERT blocks every malicious skill file and 99.6% of the benign ones. The notebook reports an AUROC of 0.74 for text length alone on the MCP set, which the trained models do not exceed.
-3. The zero-shot decision models reach AUROC 0.95 to 0.99 on the three secondary sets. Their lowest AUROC is on the primary test split (0.94 and 0.96), where the dataset's labels and their answers disagree.
-4. The validation threshold does not transfer. The 1% rule places the decision models' thresholds near 0.98, because a few primary rows labeled benign score that high, and at that threshold they block 2% to 23% of the malicious texts in each secondary set. At 0.5, Jev 1.14 blocks 91% of malicious skill files with 1.8% of benign ones, and 58% of poisoned MCP descriptions with none of the clean ones.
-5. The logistic regression's largest weights are the n-grams of "I have been PWNED", the phrase attackers had to produce in the HackAPrompt competition that supplies part of the primary set. This is a property of the dataset.
-6. The appended note raised the median score of every model. At the validation threshold, recall fell for Gemini Decision 1 (9.1% to 0.2%) and for Jev 1.14 (1.9% to 1.4%), and rose for both trained models. At 0.5, recall did not fall for any model.
-7. Jev 1.14 answered in a median of 58 ms at about $0.018 per 1,000 requests. The local models answer in under 10 ms with no cost per request.
+1. Both trained models score well on the primary test split. AUROC is above 0.99, and at the validation threshold each blocks 90% of attacks and under 1% of benign prompts.
+2. Neither trained model transfers to the secondary sets, where their AUROC is 0.60 to 0.82. At its validation threshold DistilBERT blocks every malicious skill file and 99.6% of the benign ones. The notebook reports that text length alone ranks MCP descriptions at AUROC 0.74 and deepset prompts at 0.81, about the same as DistilBERT (0.74 and 0.82) and above the logistic regression (0.63 and 0.67).
+3. The zero-shot decision models reach AUROC 0.95 to 0.99 on the three secondary sets. Their lowest AUROC is on the primary test split (0.94 and 0.96). The notebook lists the primary rows where the label and Jev 1.14's answer disagree most. Whether label noise accounts for the lower AUROC was not tested.
+4. The validation threshold does not transfer. The 1% rule places the decision models' thresholds near 0.98, and at that threshold they block 2% to 23% of the malicious texts in the skills and MCP sets. At 0.5, Jev 1.14 blocks 91% of malicious skill files with 1.8% of benign ones, and 58% of poisoned MCP descriptions with none of the clean ones.
+5. The logistic regression's largest weights are pieces of one phrase, "I have been PWNED", which attackers had to produce in the HackAPrompt competition (a source of the primary set, according to its dataset card). This is a property of the dataset and is evidence about the logistic regression only. It does not explain the false blocks on skill files, which do not contain the phrase, and nothing in the project shows what DistilBERT relies on. Two candidate causes were not examined: taking the maximum over a file's chunks (a median of 6 per skill file), and the change from 56-character training prompts to 1,000-character chunks.
+6. The appended note reduced recall at one threshold only. It raised the median score of every model, and at 0.5 no model lost recall. At the validation thresholds, where the decision models block little without the note, their recall fell (Jev 1.14 from 1.9% to 1.4%, Gemini Decision 1 from 9.1% to 0.2%).
+7. The local models score one MCP description in a median of 7 ms or less. Jev 1.14 answered one chunk in a median of 58 ms at about $0.018 per 1,000 chunks, and a median skill file is 6 chunks.
 
 ## Limits
 
@@ -168,7 +168,7 @@ Requires [uv](https://docs.astral.sh/uv/) and Python 3.12 or later. Run the step
 
 Deployed Space: SPACE_URL_PENDING
 
-The app accepts a JSON tool list (one decision per tool description) or any other text such as a `SKILL.md` (one decision). It shows the decision, score, threshold, latency and length per item.
+The app accepts a JSON tool list (one decision per tool description) or any other text such as a `SKILL.md` (one decision). It shows the decision, score, threshold, latency and length per item. It rejects pasted text over 60,000 characters and handles one request at a time.
 
 ## Files
 
@@ -181,6 +181,7 @@ The app accepts a JSON tool list (one decision per tool description) or any othe
 | `decision.py` | Client for the two hosted decision models. |
 | `app.py` | Gradio app. |
 | `space.py` | Publishes the app, the scoring code and the saved models to a Hugging Face Space. |
+| `slides.pptx` | Project slides. |
 | `Dockerfile`, `requirements.txt` | The Space's image, with CPU-only PyTorch and pinned versions. |
 | `pyproject.toml`, `uv.lock` | The development environment. |
 | `data/` | `sets.parquet` and the raw downloads (`data/raw/`, not committed). |
@@ -191,4 +192,4 @@ The app accepts a JSON tool list (one decision per tool description) or any othe
 
 ## AI use
 
-Claude Code (Claude Opus 5.5) wrote the code, the notebook and this document on November 22, 2026.
+Claude Code (Claude Opus 5.5) wrote the code (including `space.py`), the notebook, the slides (`slides.pptx`) and this document on November 22, 2026.

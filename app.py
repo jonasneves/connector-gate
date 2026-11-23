@@ -23,6 +23,8 @@ if os.environ.get("TYPESAFE_API_KEY"):
 THRESHOLDS = gate.thresholds()
 RULES = {"Fixed on validation (at most 1% of benign validation prompts blocked)": "validation", "Score of 0.5": "half"}
 loaded = {}
+# The app is public and the hosted model costs money per chunk: 60,000 characters is at most 75 chunks.
+MAX_CHARACTERS = 60_000
 
 TOOLS = json.dumps({"tools": [
     {"name": "get_forecast", "description": "Get the weather forecast for a city for the next five days."},
@@ -70,6 +72,8 @@ def items(text):
 def screen(text, model, rule):
     if not text.strip():
         return pd.DataFrame()
+    if len(text) > MAX_CHARACTERS:
+        raise gr.Error(f"Paste at most {MAX_CHARACTERS:,} characters.")
     threshold = THRESHOLDS[model][RULES[rule]]
     if model not in loaded:
         loaded[model] = LOADERS[model]()
@@ -93,7 +97,7 @@ with gr.Blocks(title="Connector gate") as demo:
     button = gr.Button("Screen", variant="primary")
     table = gr.Dataframe(label="Decision per item")
     gr.Examples([[TOOLS], [SKILL]], inputs=[text], example_labels=["MCP tool list, one tool poisoned", "Skill file with a setup command"])
-    button.click(screen, [text, model, rule], table)
+    button.click(screen, [text, model, rule], table, concurrency_limit=1)  # one request at a time
 
 if __name__ == "__main__":
     demo.launch(server_name="0.0.0.0", server_port=7860)

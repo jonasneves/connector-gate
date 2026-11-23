@@ -37,7 +37,7 @@
 # scoped credentials and does not replace them.
 #
 # **AI use.** Claude Code (Claude Opus 5.5) wrote this notebook and `data.py`, `gate.py`,
-# `decision.py` and `app.py` on November 22, 2026, from the plan agreed in that session.
+# `decision.py`, `app.py` and `space.py` on November 22, 2026.
 
 # %%
 import json
@@ -244,8 +244,8 @@ scores = pd.DataFrame({name: score(predict, list(evaluation["text"])) for name, 
 #
 # A decision model answers a yes/no question about a text with a probability, without training.
 # `decision.py` sent every chunk to two of them, Jev 1.14 and Gemini Decision 1, with the one
-# question below, written before any result was seen. They are a reference for what no training
-# data at all buys. They get thresholds by the same rule. When a provider's input filter refuses
+# question below, written before any result was seen. They are a reference for what a detector
+# with no training data achieves. They get thresholds by the same rule. When a provider's input filter refuses
 # a text, the gate counts that as a block (score 1).
 
 # %%
@@ -445,31 +445,36 @@ latency.set_index("model").round(4)
 #
 # Numbers are from the tables above (run of November 22, 2026).
 #
-# 1. **On their own test split both trained models look finished.** AUROC 0.995 (logistic
+# 1. **Both trained models score well on their own test split.** AUROC 0.995 (logistic
 #    regression) and 0.997 (DistilBERT), and at the validation threshold each blocks 90% of attacks
 #    while blocking under 1% of benign prompts.
-# 2. **Neither transfers to what an agent loads from a connector.** On the three unseen sets their
-#    AUROC is 0.60 to 0.82. At its validation threshold DistilBERT blocks every malicious skill file
-#    and also 99.6% of the benign ones. On MCP descriptions the trained models rank no better than
-#    text length alone (0.63 and 0.74 against 0.74).
+# 2. **Neither transfers to the unseen sets.** Their AUROC there is 0.60 to 0.82. At its
+#    validation threshold DistilBERT blocks every malicious skill file and also 99.6% of the benign
+#    ones. Text length alone ranks MCP descriptions at 0.74 and deepset prompts at 0.81, about the
+#    same as DistilBERT (0.74 and 0.82) and above the baseline (0.63 and 0.67).
 # 3. **The zero-shot decision models rank all three unseen sets at 0.95 to 0.99**, with no training
-#    data. Their weakest set is the primary one (0.94 and 0.96), where the dataset's labels and
-#    their answers disagree (section 6).
+#    data. Their weakest set is the primary one (0.94 and 0.96). Section 6 lists primary rows where
+#    the label and Jev 1.14's answer disagree most; whether label noise accounts for the lower
+#    AUROC was not tested.
 # 4. **A threshold does not transfer either.** The 1%-on-validation rule puts the decision models'
-#    thresholds near 0.98, because a few primary rows labeled benign score that high, and at that
-#    threshold they block 2% to 23% of malicious connector content. At 0.5, Jev 1.14 blocks 91% of
-#    malicious skill files with 1.8% of benign ones, and 58% of poisoned MCP descriptions with none
-#    of the clean ones. The 0.5 threshold was added after seeing the first result, so it is an
-#    observation to confirm on new data, not a tuned operating point.
-# 5. **What the baseline learned is visible in its weights:** the n-grams of "I have been PWNED",
-#    the phrase attackers had to produce in the HackAPrompt competition that supplies part of the
-#    primary set. That is a property of the dataset, not of injection.
-# 6. **The appended note did not work as an evasion.** It raised the median score of every model,
-#    and at 0.5 no model lost recall. At the validation thresholds, where the decision models
-#    block little to begin with, their recall fell (Jev 1.14 from 1.9% to 1.4%, Gemini Decision 1
-#    from 9% to under 1%).
-# 7. **Cost of the hosted reference:** Jev 1.14 answered in a median of 58 ms at about $0.018 per
-#    1,000 requests; the local models answer in under 10 ms at no cost per request.
+#    thresholds near 0.98, and at that threshold they block 2% to 23% of malicious texts in the
+#    skills and MCP sets. At 0.5, Jev 1.14 blocks 91% of malicious skill files with 1.8% of benign
+#    ones, and 58% of poisoned MCP descriptions with none of the clean ones. The 0.5 threshold was
+#    added after seeing the first result, so it is an observation to confirm on new data, not a
+#    tuned operating point.
+# 5. **The baseline's heaviest weights are pieces of one phrase**, "I have been PWNED", which
+#    attackers had to produce in the HackAPrompt competition (a source of the primary set, per its
+#    dataset card). That is a property of the dataset. It does not explain the false blocks on
+#    skill files, which do not contain the phrase, and nothing here shows what DistilBERT relies
+#    on. Two candidates were not examined: taking the maximum over a file's chunks (a median of 6
+#    per skill file), and the shift from 56-character training prompts to 1,000-character chunks.
+# 6. **The appended note worked only at one threshold.** It raised the median score of every
+#    model, and at 0.5 no model lost recall. At the validation thresholds, where the decision
+#    models block little to begin with, their recall fell (Jev 1.14 from 1.9% to 1.4%, Gemini
+#    Decision 1 from 9.1% to 0.2%).
+# 7. **Latency and cost:** the local models answer one MCP description in a median of 7 ms or
+#    less. Jev 1.14 answered one chunk in a median of 58 ms at about $0.018 per 1,000 chunks; a
+#    median skill file is 6 chunks.
 #
 # **Limits.** One primary dataset with noisy labels; one run of DistilBERT per learning rate; the
 # MCP positives are synthetic (written for a benchmark) and longer than the clean descriptions;
