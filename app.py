@@ -19,19 +19,35 @@ import decision
 import gate
 
 LOADERS = {"logistic regression": gate.baseline, "DistilBERT": gate.distilbert}
-if os.environ.get("TYPESAFE_API_KEY"):
-    # Hosted and zero-shot: the pasted text is sent to the provider's API, one request per chunk.
-    def jev():
-        ask = decision.session("jev")
-        # The provider's score for one text moves by 0.01 between calls, so a text keeps its first score.
-        score = functools.lru_cache(maxsize=4096)(lambda piece: ask(piece)["p"])
-        return lambda pieces: [score(piece) for piece in pieces]
-    LOADERS["Jev 1.14"] = jev
+# Hosted and zero-shot: the pasted text is sent to the provider's API, one request per chunk.
+HOSTED = {"Jev 1.14": ("jev", "Typesafe"), "Gemini Decision 1": ("gemini", "Google")}
+REFUSED = set()  # (model, text) pairs the provider's input filter refused; counted as a block, as in the notebook
+
+
+def hosted(model):
+    ask = decision.session(HOSTED[model][0], timeout=4, attempts=2)
+
+    # A provider's score for one text can move by 0.01 between calls, so a text keeps its first score.
+    @functools.lru_cache(maxsize=4096)
+    def score(piece):
+        p = ask(piece)["p"]
+        if p is None:
+            REFUSED.add((model, piece))
+        return 1.0 if p is None else p
+    return lambda pieces: [score(piece) for piece in pieces]
+
+
+for name, (short, _) in HOSTED.items():
+    if os.environ.get(decision.MODELS[short][1]):
+        LOADERS[name] = functools.partial(hosted, name)
 MODELS = {name: load() for name, load in LOADERS.items()}
-for predict in MODELS.values():
-    predict(["warm-up"])  # the first call to a model is several times slower than the rest
-KIND = {"logistic regression": "trained on prompt injection", "DistilBERT": "trained on prompt injection",
-        "Jev 1.14": "hosted, no training"}
+for name, predict in MODELS.items():
+    try:
+        predict(["warm-up"])  # the first call to a model is several times slower than the rest
+    except (RuntimeError, OSError):
+        print(f"{name} did not answer the warm-up call", flush=True)
+PROVIDERS = " and ".join(f"{HOSTED[name][1]} ({name})" for name in MODELS if name in HOSTED)
+KIND = {name: "hosted, no training" if name in HOSTED else "trained on prompt injection" for name in MODELS}
 THRESHOLDS = gate.thresholds()
 RULES = {"0.5": "half", "Validation threshold": "validation"}
 # The app is public and the hosted model costs money per chunk, so one submission scores at most 75.
@@ -145,6 +161,8 @@ def items(text):
 
 
 def verdict(blocked):
+    if blocked is None:
+        return '<span class="cg-verdict">? No answer</span>'
     return ('<span class="cg-verdict cg-blocked">✕ Blocked</span>' if blocked
             else '<span class="cg-verdict cg-allowed">✓ Allowed</span>')
 
@@ -191,16 +209,27 @@ def screen(text, decider, rule):
         raise gr.Error(f"Too much to screen at once: at most {MAX_CHUNKS} tools or 1,000-character chunks.")
     rule = RULES[rule]
     tested_on = "mcp" if kind == "tools" else "skills"
-    cards, blocked_count = [], 0
+    cards, blocked_count, unanswered = [], 0, 0
     for (name, body), group in zip(found, pieces):
         rows, passage = [], ""
         for model in sorted(MODELS, key=lambda m: m != decider):  # the deciding model first
             start = time.perf_counter()
-            scores = np.asarray(MODELS[model](group), dtype=float)
+            try:
+                scores = np.asarray(MODELS[model](group), dtype=float)
+            except (RuntimeError, OSError):  # a hosted model that timed out or was rate-limited
+                if model == decider:
+                    unanswered += 1
+                    headline, shown = verdict(None), group[0]
+                    quote = f'<div class="cg-text">{html.escape(shown)}</div>' if kind == "tools" else ""
+                rows.append(f'<tr class="{"cg-decides" if model == decider else "cg-other"}"><td class="cg-model">'
+                            f'{html.escape(model)}<span class="cg-kind">{KIND[model]}</span></td>'
+                            '<td colspan="4" class="cg-meta">No answer from the provider. Screen again to retry.</td></tr>')
+                continue
             ms = (time.perf_counter() - start) * 1000
+            refused = any((model, piece) in REFUSED for piece in group)
             score, threshold = float(scores.max()), THRESHOLDS[model][rule]
             # Validation thresholds of the trained models sit as high as 0.998; Jev answers in steps of 0.01.
-            digits = 3 if rule == "validation" and model != "Jev 1.14" else 2
+            digits = 3 if rule == "validation" and model != "Jev 1.14" and not refused else 2
             blocked = score >= threshold
             if model == decider:
                 blocked_count += blocked
@@ -219,7 +248,8 @@ def screen(text, decider, rule):
                 f'<tr class="{"cg-decides" if model == decider else "cg-other"}">'
                 f'<td class="cg-model">{html.escape(model)}<span class="cg-kind">{KIND[model]}'
                 f'{" · decides" if model == decider else ""}<br>blocked {tested(tested_on, model, "FPR", rule):.0%} of '
-                f'{"clean tools" if kind == "tools" else "benign skill files"} in testing</span></td>'
+                f'{"clean tools" if kind == "tools" else "benign skill files"} in testing'
+                f'{"<br>refused by the provider’s input filter, counted as a block" if refused else ""}</span></td>'
                 f'<td style="width:34%"><div class="cg-bar" aria-hidden="true">'
                 f'<div class="cg-fill" style="width:{score:.1%}"></div>'
                 f'<div class="cg-tick" style="left:{threshold:.1%}"></div></div></td>'
@@ -233,7 +263,8 @@ def screen(text, decider, rule):
             f'<table class="cg-models"><tbody>{"".join(rows)}</tbody></table></article>')
     noun = ("tool" if len(found) == 1 else "tools") if kind == "tools" else "file" if found[0][0] != "pasted text" else "text"
     unparsed = ("This is not a JSON tool list, so it was screened as one text. " if kind == "file" and text.lstrip()[:1] in "{[" else "")
-    summary = (f'<p class="cg-summary">{html.escape(decider)} blocks {blocked_count} of {len(found)} {noun}</p>'
+    summary = (f'<p class="cg-summary">{html.escape(decider)} blocks {blocked_count} of {len(found)} {noun}'
+               f'{f", with no answer on {unanswered}" if unanswered else ""}</p>'
                f'<p class="cg-sub">{unparsed}Each bar is a model’s estimate, from 0 to 1, that the text is malicious, and '
                'the line on it is the block threshold. Logistic regression and DistilBERT learned from chat prompts '
                'and saw no tool descriptions or skill files in training, so they block much benign content of this kind.</p>')
@@ -250,9 +281,8 @@ with gr.Blocks(title="Connector gate") as demo:
                     ("Example: tool list, one tool poisoned", TOOLS), ("Example: skill that runs a download", SKILL),
                     ("Example: skill with a hidden comment", COMMENT))}
             text = gr.Textbox(value=TOOLS, lines=10, max_lines=16, label="MCP tool list (JSON) or skill file (SKILL.md)",
-                              info="Everything screened here is sent to Typesafe, the provider of Jev 1.14."
-                              if "Jev 1.14" in MODELS else None)
-            decider = gr.Radio(list(MODELS), value=list(MODELS)[-1], label="Deciding model",
+                              info=f"Everything screened here is sent to {PROVIDERS}." if PROVIDERS else None)
+            decider = gr.Radio(list(MODELS), value="Jev 1.14" if "Jev 1.14" in MODELS else list(MODELS)[-1], label="Deciding model",
                                info="The other models are scored too and shown for comparison.")
             rule = gr.Radio(list(RULES), value="0.5", label="Block when the score reaches",
                             info="Validation threshold: set per model so that it blocked at most 1% of benign prompts in "
@@ -265,8 +295,8 @@ with gr.Blocks(title="Connector gate") as demo:
                     "- A long file is cut into overlapping 1,000-character chunks and gets the score of its highest-scoring chunk.\n"
                     "- Logistic regression (on TF-IDF n-grams) and DistilBERT were trained on a public prompt-injection "
                     "dataset and run inside this app.\n"
-                    "- Jev 1.14 is a hosted decision model that answers one yes/no question with a probability, with no "
-                    f"training. The question: *{gate.QUESTION}*\n"
+                    "- Jev 1.14 and Gemini Decision 1 are hosted decision models. Each answers one yes/no question with a "
+                    f"probability, with no training. The question: *{gate.QUESTION}*\n"
                     "- Limits: 60,000 characters and 75 chunks per submission.")
         with gr.Column(scale=6, min_width=320):
             results = gr.HTML(elem_id="cg-results", label="Result", padding=False)

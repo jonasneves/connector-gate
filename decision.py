@@ -37,17 +37,19 @@ def evaluation_chunks():
     return list(dict.fromkeys(piece for text in texts for piece in chunks(text)))
 
 
-def session(name):
+def session(name, timeout=8, attempts=6):
+    """A function that asks one hosted model about one text. The app passes a short timeout and few
+    attempts, because a person is waiting; the batch run keeps the defaults."""
     url, key_env, model = MODELS[name]
     u = urlsplit(url)
     auth = {"x-goog-api-key": os.environ[key_env]} if name == "gemini" else {"authorization": f"Bearer {os.environ[key_env]}"}
-    conn = http.client.HTTPSConnection(u.netloc, timeout=8)
+    conn = http.client.HTTPSConnection(u.netloc, timeout=timeout)
 
     def ask(text):
         nonlocal conn
         body = {"model": model, "state" if name == "jev" else "input": text,
                 "questions": {"malicious": {"type": "noul", "instructions": QUESTION}}}
-        for attempt in range(6):
+        for attempt in range(attempts):
             start = time.perf_counter()
             try:
                 conn.request("POST", u.path, json.dumps(body), {**auth, "content-type": "application/json"})
@@ -56,7 +58,7 @@ def session(name):
             except (http.client.HTTPException, OSError) as error:
                 print(f"{name} {type(error).__name__}, retry {attempt + 1}", file=sys.stderr, flush=True)
                 conn.close()
-                conn = http.client.HTTPSConnection(u.netloc, timeout=8)
+                conn = http.client.HTTPSConnection(u.netloc, timeout=timeout)
                 continue
             ms = (time.perf_counter() - start) * 1000
             if res.status in (429, 499, 529) or res.status >= 500:

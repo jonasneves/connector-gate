@@ -144,7 +144,7 @@ Requires [uv](https://docs.astral.sh/uv/) and Python 3.12 or later. Run the step
    uv run jupyter nbconvert --to notebook --execute --inplace --ExecutePreprocessor.timeout=3600 notebook.ipynb
    ```
 
-4. Run the app at <http://localhost:7860>. With `TYPESAFE_API_KEY` set, the app also scores with Jev 1.14 and sends every screened text to that provider.
+4. Run the app at <http://localhost:7860>. With `TYPESAFE_API_KEY` or `GEMINI_API_KEY` set, the app also scores with Jev 1.14 or Gemini Decision 1 and sends every screened text to that provider. A hosted model that does not answer within two attempts of 4 seconds gets a "no answer" row, and a text Gemini's input filter refuses counts as a block.
 
    ```sh
    uv run app.py
@@ -157,10 +157,10 @@ Requires [uv](https://docs.astral.sh/uv/) and Python 3.12 or later. Run the step
    docker run -p 7860:7860 connector-gate
    ```
 
-6. Deploy to the Duke VM (needs SSH access to it). The script copies the app and the saved models, builds the image there with rootless Podman and restarts the service. With `TYPESAFE_API_KEY` set, the key is written to an owner-only file on the VM.
+6. Deploy to the Duke VM (needs SSH access to it). The script copies the app and the saved models, builds the image there with rootless Podman and restarts the service. The hosted models' keys that are set are written to an owner-only file on the VM.
 
    ```sh
-   TYPESAFE_API_KEY=... ./deploy.sh
+   TYPESAFE_API_KEY=... GEMINI_API_KEY=... ./deploy.sh
    ```
 
 ## Deployment
