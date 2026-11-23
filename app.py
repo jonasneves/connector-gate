@@ -23,8 +23,8 @@ if os.environ.get("TYPESAFE_API_KEY"):
 THRESHOLDS = gate.thresholds()
 RULES = {"Fixed on validation (at most 1% of benign validation prompts blocked)": "validation", "Score of 0.5": "half"}
 loaded = {}
-# The app is public and the hosted model costs money per chunk: 60,000 characters is at most 75 chunks.
-MAX_CHARACTERS = 60_000
+# The app is public and the hosted model costs money per chunk, so one submission scores at most 75.
+MAX_CHARACTERS, MAX_CHUNKS = 60_000, 75
 
 TOOLS = json.dumps({"tools": [
     {"name": "get_forecast", "description": "Get the weather forecast for a city for the next five days."},
@@ -74,11 +74,14 @@ def screen(text, model, rule):
         return pd.DataFrame()
     if len(text) > MAX_CHARACTERS:
         raise gr.Error(f"Paste at most {MAX_CHARACTERS:,} characters.")
+    found = items(text)
+    if sum(len(gate.chunks(body)) for _, body in found) > MAX_CHUNKS:
+        raise gr.Error(f"Too much to screen at once: at most {MAX_CHUNKS} tools or 1,000-character chunks.")
     threshold = THRESHOLDS[model][RULES[rule]]
     if model not in loaded:
         loaded[model] = LOADERS[model]()
     rows = []
-    for name, body in items(text):
+    for name, body in found:
         start = time.perf_counter()
         probability = float(gate.score(loaded[model], [body])[0])
         rows.append({"item": name, "decision": "BLOCK" if probability >= threshold else "allow",
