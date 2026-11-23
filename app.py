@@ -21,20 +21,19 @@ import gate
 LOADERS = {"logistic regression": gate.baseline, "DistilBERT": gate.distilbert}
 # Hosted and zero-shot: the pasted text is sent to the provider's API, one request per chunk.
 HOSTED = {"Jev 1.14": ("jev", "Typesafe"), "Gemini Decision 1": ("gemini", "Google")}
-REFUSED = set()  # (model, text) pairs the provider's input filter refused; counted as a block, as in the notebook
 
 
 def hosted(model):
     ask = decision.session(HOSTED[model][0], timeout=4, attempts=2)
-
     # A provider's score for one text can move by 0.01 between calls, so a text keeps its first score.
-    @functools.lru_cache(maxsize=4096)
-    def score(piece):
-        p = ask(piece)["p"]
-        if p is None:
-            REFUSED.add((model, piece))
-        return 1.0 if p is None else p
-    return lambda pieces: [score(piece) for piece in pieces]
+    # The score is None when the provider's input filter refused the text.
+    score = functools.lru_cache(maxsize=4096)(lambda piece: ask(piece)["p"])
+
+    def predict(pieces):
+        """One probability per text. A refused text counts as a block (1.0), as in the notebook."""
+        return [1.0 if score(piece) is None else score(piece) for piece in pieces]
+    predict.refused = lambda pieces: any(score(piece) is None for piece in pieces)  # read from the cache
+    return predict
 
 
 for name, (short, _) in HOSTED.items():
@@ -226,7 +225,7 @@ def screen(text, decider, rule):
                             '<td colspan="4" class="cg-meta">No answer from the provider. Screen again to retry.</td></tr>')
                 continue
             ms = (time.perf_counter() - start) * 1000
-            refused = any((model, piece) in REFUSED for piece in group)
+            refused = model in HOSTED and MODELS[model].refused(group)
             score, threshold = float(scores.max()), THRESHOLDS[model][rule]
             # Validation thresholds of the trained models sit as high as 0.998; Jev answers in steps of 0.01.
             digits = 3 if rule == "validation" and model != "Jev 1.14" and not refused else 2
