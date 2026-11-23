@@ -479,4 +479,6 @@ latency.set_index("model").round(4)
 # **Limits.** One primary dataset with noisy labels; one run of DistilBERT per learning rate; the
 # MCP positives are synthetic (written for a benchmark) and longer than the clean descriptions;
 # the skills set comes from one registry and two campaigns; the hosted models can change without
-# notice; the evasion test is one fixed sentence, not an adaptive attacker.
+# notice; the evasion test is one fixed sentence, not an adaptive attacker. No text in the skills
+# or MCP sets hides instructions in invisible Unicode (zero-width characters, the tag block), and
+# one malicious skill file uses an HTML comment, so neither technique is measured here.

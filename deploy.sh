@@ -9,7 +9,7 @@ cd "$(dirname "$0")"
 HOST="${DUKE_HOST:-jd599@radchat.colab.duke.edu}"
 
 rsync -az --delete --relative app.py gate.py decision.py requirements.txt Dockerfile connector-gate.container \
-  models/baseline.joblib models/thresholds.json models/distilbert "$HOST:connector-gate/"
+  models/baseline.joblib models/thresholds.json models/distilbert results/metrics.csv "$HOST:connector-gate/"
 if [ -n "${TYPESAFE_API_KEY:-}" ]; then
   printf 'TYPESAFE_API_KEY=%s\n' "$TYPESAFE_API_KEY" | ssh "$HOST" 'umask 077; cat > connector-gate/.env'
 fi

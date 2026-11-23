@@ -144,7 +144,7 @@ Requires [uv](https://docs.astral.sh/uv/) and Python 3.12 or later. Run the step
    uv run jupyter nbconvert --to notebook --execute --inplace --ExecutePreprocessor.timeout=3600 notebook.ipynb
    ```
 
-4. Run the app at <http://localhost:7860>. With `TYPESAFE_API_KEY` set, the app also offers Jev 1.14 and sends the pasted text to that provider.
+4. Run the app at <http://localhost:7860>. With `TYPESAFE_API_KEY` set, the app also scores with Jev 1.14 and sends every screened text to that provider.
 
    ```sh
    uv run app.py
@@ -169,7 +169,7 @@ Live app: <https://connector-gate.colab.duke.edu>
 
 The container runs on a Duke VCM virtual machine (2 vCPU, 3.3 GiB, shared with another project) as a Podman Quadlet user service (`connector-gate.container`): port 7860 published on `127.0.0.1:8081`, memory limited to 1.5 GiB, restarted on failure and at boot. Caddy on the VM terminates TLS and routes the hostname to that port; its configuration is in `jonasneves/infra` under `duke/`. A VCM reservation lasts one semester and has no uptime guarantee. Hugging Face Spaces was not used because Docker and Gradio Spaces on the free CPU tier required a paid subscription (November 2026).
 
-The app accepts a JSON tool list (one decision per tool description) or any other text such as a `SKILL.md` (one decision). It shows the decision, score, threshold, latency and length per item. It rejects pasted text over 60,000 characters or 75 chunks and handles one request at a time.
+The app accepts a JSON tool list (one decision per tool description) or any other text such as a `SKILL.md` (one decision). Every available model scores each item. The model chosen under "Deciding model" gives the item's verdict, and the others are listed beside it with score, threshold and latency. Under the results, a table read from `results/metrics.csv` gives each model's share blocked on the MCP and skills sets at the chosen threshold. An item that contains invisible Unicode characters gets a notice; the notice does not change the verdict. It rejects pasted text over 60,000 characters or 75 chunks and handles one request at a time.
 
 ## Files
 
