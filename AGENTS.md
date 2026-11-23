@@ -168,7 +168,7 @@ Requires [uv](https://docs.astral.sh/uv/) and Python 3.12 or later. Run the step
 
 Deployed Space: SPACE_URL_PENDING
 
-The app accepts a JSON tool list (one decision per tool description) or any other text such as a `SKILL.md` (one decision). It shows the decision, score, threshold, latency and length per item. It rejects pasted text over 60,000 characters and handles one request at a time.
+The app accepts a JSON tool list (one decision per tool description) or any other text such as a `SKILL.md` (one decision). It shows the decision, score, threshold, latency and length per item. It rejects pasted text over 60,000 characters or 75 chunks and handles one request at a time.
 
 ## Files
 
