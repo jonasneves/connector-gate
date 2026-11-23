@@ -17,7 +17,7 @@ from urllib.parse import urlsplit
 
 import pandas as pd
 
-from gate import EVASION_NOTE, QUESTION, chunks
+from gate import EVASION_VARIANTS, QUESTION, chunks
 
 ROOT = Path(__file__).parent
 MODELS = {"jev": ("https://api.typesafe.ai/v1/systemone", "TYPESAFE_API_KEY", "jev-1.14.0"),
@@ -30,10 +30,11 @@ def key(text):
 
 
 def evaluation_chunks():
-    """Every chunk of every row outside the training split, plus the evasion variant of each malicious MCP description."""
+    """Every chunk of every row outside the training split, plus each evasion variant of each malicious MCP description."""
     sets = pd.read_parquet(ROOT / "data" / "sets.parquet")
     texts = list(sets.loc[sets["split"] != "train", "text"])
-    texts += [text + EVASION_NOTE for text in sets.loc[(sets["set"] == "mcp") & (sets["label"] == 1), "text"]]
+    texts += [prefix + text + suffix for prefix, suffix in EVASION_VARIANTS
+              for text in sets.loc[(sets["set"] == "mcp") & (sets["label"] == 1), "text"]]
     return list(dict.fromkeys(piece for text in texts for piece in chunks(text)))
 
 

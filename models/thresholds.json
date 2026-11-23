@@ -4,7 +4,11 @@
   "half": 0.5
  },
  "DistilBERT": {
-  "validation": 0.9982002973556519,
+  "validation": 0.9982020854949951,
+  "half": 0.5
+ },
+ "ProtectAI v2": {
+  "validation": 0.9999972581863403,
   "half": 0.5
  },
  "Jev 1.14": {

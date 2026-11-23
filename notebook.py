@@ -2,6 +2,11 @@
 # jupyter:
 #   jupytext:
 #     formats: ipynb,py:percent
+#     text_representation:
+#       extension: .py
+#       format_name: percent
+#       format_version: '1.3'
+#       jupytext_version: 1.19.7
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -24,9 +29,10 @@
 # | Model 1: TF-IDF and logistic regression | 2 |
 # | Model 2: fine-tuned DistilBERT | 3 |
 # | Block thresholds, fixed on validation | 4 |
+# | Reference: an off-the-shelf detector, as published | 4 |
 # | Reference: hosted decision models, zero-shot | 5 |
 # | Evaluation on the test split and the secondary sets | 6 |
-# | Evasion test | 7 |
+# | Evasion test: one note, then an attacker who picks among six | 7 |
 # | Latency and cost | 8 |
 #
 # **Threat model.** *Actor:* anyone who can publish a skill, an MCP server or a document the agent
@@ -59,7 +65,7 @@ from transformers import AutoModelForSequenceClassification, AutoTokenizer, get_
 import transformers
 
 from decision import key
-from gate import EVASION_NOTE, MAX_TOKENS, MODELS, QUESTION, chunks, device, predictor, score
+from gate import EVASION_NOTE, EVASION_VARIANTS, MAX_TOKENS, MODELS, QUESTION, chunks, device, predictor, score
 
 transformers.logging.set_verbosity_error()
 transformers.logging.disable_progress_bar()
@@ -240,6 +246,22 @@ scores = pd.DataFrame({name: score(predict, list(evaluation["text"])) for name, 
                       index=evaluation.index)
 
 # %% [markdown]
+# ### Reference: an off-the-shelf detector
+#
+# ProtectAI's `deberta-v3-base-prompt-injection-v2` is a published prompt-injection classifier
+# (a fine-tuned DeBERTa-v3-base), used here as downloaded at a pinned revision, with no training.
+# The 2026 papers that re-evaluate detectors compare against models of this kind, so it stands in
+# for what a team would get by installing one. Its model card says it was trained on 22 public
+# datasets and names only some of them, so whether it saw any text from the sets evaluated here is
+# unknown. It is English-only. It gets a threshold by the same rule as every other model.
+
+# %%
+from gate import protectai as load_protectai
+
+predictors["ProtectAI v2"] = load_protectai()
+scores["ProtectAI v2"] = score(predictors["ProtectAI v2"], list(evaluation["text"]))
+
+# %% [markdown]
 # ## 5. Reference: hosted decision models, zero-shot
 #
 # A decision model answers a yes/no question about a text with a probability, without training.
@@ -301,7 +323,8 @@ table.to_csv(RESULTS / "metrics.csv", index=False)
 table.set_index(["set", "model"]).round(3)
 
 # %%
-COLORS = dict(zip(scores, ["#2a78d6", "#eb6834", "#1baf7a", "#eda100"]))
+COLORS = {"logistic regression": "#2a78d6", "DistilBERT": "#eb6834", "ProtectAI v2": "#8a63d2",
+          "Jev 1.14": "#1baf7a", "Gemini Decision 1": "#eda100"}
 INK, MUTED, GRID, SURFACE = "#0b0b0b", "#52514e", "#e1e0d9", "#fcfcfb"
 plt.rcParams.update({"figure.facecolor": SURFACE, "axes.facecolor": SURFACE, "savefig.facecolor": SURFACE,
                      "axes.edgecolor": "#c3c2b7", "axes.labelcolor": MUTED, "xtick.color": MUTED, "ytick.color": MUTED,
@@ -320,25 +343,26 @@ for axis, (set_name, rows) in zip(axes, EVAL_SETS.items()):
     axis.set(title=set_name, xlabel="false positive rate", xlim=(0, 1), ylim=(0, 1.005))
 axes[0].set_ylabel("recall")
 axes[0].legend(loc="lower right")
-figure.suptitle("ROC by set. Trained models saw only the primary set; decision models saw none.", x=0.008, ha="left", fontweight="bold")
+figure.suptitle("ROC by set. The two trained models saw only the primary set; the other three were not trained here.", x=0.008, ha="left", fontweight="bold")
 figure.tight_layout()
 figure.savefig(RESULTS / "figures" / "roc.png")
 
 # %%
 def bars(suffix, title, filename):
     figure, axes = plt.subplots(1, 2, figsize=(15, 4.3), sharey=True)
-    width = 0.21
+    count = len(scores.columns)
+    width = 0.84 / count
     for axis, measure, name in zip(axes, ("recall", "FPR"), ("Malicious texts blocked (recall)", "Benign texts blocked (false positive rate)")):
         for i, model in enumerate(scores):
             values = table.loc[table["model"] == model].set_index("set").loc[list(EVAL_SETS), measure + suffix]
-            drawn = axis.bar(np.arange(len(EVAL_SETS)) + (i - 1.5) * width, values, width * 0.9, color=COLORS[model], label=model)
-            axis.bar_label(drawn, [f"{v:.0%}" for v in values], fontsize=7, color=MUTED, padding=2)
+            drawn = axis.bar(np.arange(len(EVAL_SETS)) + (i - (count - 1) / 2) * width, values, width * 0.9, color=COLORS[model], label=model)
+            axis.bar_label(drawn, [f"{v:.0%}" for v in values], fontsize=6, color=MUTED, padding=2)
         axis.set(title=name, ylim=(0, 1.1), xticks=np.arange(len(EVAL_SETS)), xticklabels=list(EVAL_SETS))
         axis.yaxis.set_major_formatter(lambda v, _: f"{v:.0%}")
         axis.grid(axis="x", visible=False)
     figure.suptitle(title, x=0.008, ha="left", fontweight="bold")
     figure.tight_layout(rect=(0, 0.07, 1, 1))
-    figure.legend(*axes[0].get_legend_handles_labels(), loc="lower center", ncol=4)
+    figure.legend(*axes[0].get_legend_handles_labels(), loc="lower center", ncol=count)
     figure.savefig(RESULTS / "figures" / filename)
 
 
@@ -392,11 +416,32 @@ for set_name in ("mcp", "skills", "deepset"):
           f" malicious {int(group.loc[group['label'] == 1, 'text'].str.len().median())}")
 
 # %% [markdown]
+# ### Is the skills result a campaign effect?
+#
+# The skills dataset's card publishes a rule of 13 indicators (campaign names, hosts, an IP
+# address, a decoding command) and reports that it separates the set perfectly. MaliciousSkillBench
+# (Wang et al., 2026, [arXiv:2608.19901](https://arxiv.org/abs/2608.19901)) keeps this source's
+# malicious files and leaves its benign files out of its primary benchmark as weakly labelled.
+# The check: apply the card's rule to the cleaned set. If it separates the classes, a high AUROC
+# on this set shows that a model recognises these campaigns, and says nothing about a new one.
+
+# %%
+import re
+
+CARD_RULE = re.compile("|".join([
+    r"openclawcli", r"openclaw-core", r"glot\.io/snippets", r"rentry\.co/openclaw", r"Ddoy233", r"denboss99",
+    r"base64\s+-[dD]", r"91\.92\.242\.30", r"openclawcli\.vercel", r"webhook\.site", r"setup-service\.com",
+    r"AuthTool", r"pass(?:word)?[:\s]+.{0,10}openclaw"]), re.IGNORECASE)
+skill_files = sets[sets["set"] == "skills"]
+pd.crosstab(skill_files["label"], skill_files["text"].map(lambda text: bool(CARD_RULE.search(text))),
+            rownames=["label"], colnames=["card rule matches"])
+
+# %% [markdown]
 # ## 7. Evasion test
 #
-# The attacker knows a detector reads the text, so they add a sentence addressed to it. The note
+# The attacker knows a detector reads the text, so they add a note addressed to it. The note
 # below is appended to every malicious MCP description, and each model scores the result at its
-# unchanged thresholds. A drop in recall is the share of attacks this one sentence gets through.
+# unchanged thresholds. A drop in recall is the share of attacks this one note gets through.
 
 # %%
 print(repr(EVASION_NOTE))
@@ -411,8 +456,38 @@ for model, predict in predictors.items():
                 f"recall{at} with the note": (with_note >= threshold).mean()}
     evasion.append(row)
 evasion = pd.DataFrame(evasion)
-evasion.to_csv(RESULTS / "evasion.csv", index=False)
 evasion.set_index("model").round(3)
+
+# %% [markdown]
+# ### An attacker who picks among six wrappers
+#
+# One fixed note is a weak attacker. Nasr et al. ("The Attacker Moves Second", 2025,
+# [arXiv:2510.09023](https://arxiv.org/abs/2510.09023)) bypassed 12 published defenses with attacks
+# that adapt to the defense. The test below is a small step in that direction and no more. It uses
+# six fixed wrappers (`EVASION_VARIANTS` in `gate.py`; the first is the note above, and the other
+# five were written before any of the five was scored). The attacker can query the detector and
+# keeps, for each description and each model, whichever scores lowest: the description unchanged
+# or one of the six wrapped forms. Leaving it unchanged was added as a choice after the first
+# run, because some wrappers raise a model's score and an attacker would not use those.
+
+# %%
+for number, (prefix, suffix) in enumerate(EVASION_VARIANTS, 1):
+    print(number, repr(prefix + "<description>" + suffix))
+variants = {model: np.column_stack([score(predict, [prefix + text + suffix for text in poisoned["text"]])
+                                    for prefix, suffix in EVASION_VARIANTS]) for model, predict in predictors.items()}
+per_wrapper = pd.DataFrame({model: (with_all >= thresholds[model]["half"]).mean(axis=0) for model, with_all in variants.items()},
+                           index=pd.RangeIndex(1, len(EVASION_VARIANTS) + 1, name="wrapper")).T
+per_wrapper.to_csv(RESULTS / "evasion-wrappers.csv", index_label="model")
+lowest = {model: np.minimum(with_all.min(axis=1), scores.loc[poisoned.index, model]) for model, with_all in variants.items()}
+best = pd.DataFrame([{"model": model,
+                      "recall with the attacker's pick": (low >= thresholds[model]["validation"]).mean(),
+                      "recall at 0.5 with the attacker's pick": (low >= thresholds[model]["half"]).mean()}
+                     for model, low in lowest.items()])
+evasion = evasion.merge(best, on="model")
+evasion.to_csv(RESULTS / "evasion.csv", index=False)
+print("Recall at 0.5 on the 485 poisoned descriptions, per wrapper:")
+display(per_wrapper.round(3))
+evasion.set_index("model")[["recall", "recall with the attacker's pick", "recall at 0.5", "recall at 0.5 with the attacker's pick"]].round(3)
 
 # %% [markdown]
 # ## 8. Latency and cost
@@ -424,7 +499,7 @@ evasion.set_index("model").round(3)
 # %%
 sample = list(sets.loc[sets["set"] == "mcp", "text"].head(200))
 latency = []
-for model in ("logistic regression", "DistilBERT"):
+for model in ("logistic regression", "DistilBERT", "ProtectAI v2"):
     predictors[model](sample[:8])  # the first call pays one-time setup
     times = []
     for text in sample:
@@ -455,30 +530,67 @@ latency.set_index("model").round(4)
 # 3. **The zero-shot decision models rank all three unseen sets at 0.95 to 0.99**, with no training
 #    data. Their weakest set is the primary one (0.94 and 0.96). Section 6 lists primary rows where
 #    the label and Jev 1.14's answer disagree most; whether label noise accounts for the lower
-#    AUROC was not tested.
+#    AUROC was not tested. The skills result is narrower than it looks: the 13-indicator rule on
+#    the dataset's card matches all 124 malicious files and none of the 223 benign ones, so a
+#    high AUROC there shows a model recognises these campaigns and does not measure a new one.
 # 4. **A threshold does not transfer either.** The 1%-on-validation rule puts the decision models'
 #    thresholds near 0.98, and at that threshold they block 2% to 23% of malicious texts in the
 #    skills and MCP sets. At 0.5, Jev 1.14 blocks 91% of malicious skill files with 1.8% of benign
 #    ones, and 58% of poisoned MCP descriptions with none of the clean ones. The 0.5 threshold was
 #    added after seeing the first result, so it is an observation to confirm on new data, not a
 #    tuned operating point.
-# 5. **The baseline's heaviest weights are pieces of one phrase**, "I have been PWNED", which
+# 5. **Most of the baseline's heaviest weights (18 of the top 20) are pieces of one phrase**, "I have been PWNED", which
 #    attackers had to produce in the HackAPrompt competition (a source of the primary set, per its
 #    dataset card). That is a property of the dataset. It does not explain the false blocks on
 #    skill files, which do not contain the phrase, and nothing here shows what DistilBERT relies
 #    on. Two candidates were not examined: taking the maximum over a file's chunks (a median of 6
 #    per skill file), and the shift from 56-character training prompts to 1,000-character chunks.
-# 6. **The appended note worked only at one threshold.** It raised the median score of every
-#    model, and at 0.5 no model lost recall. At the validation thresholds, where the decision
-#    models block little to begin with, their recall fell (Jev 1.14 from 1.9% to 1.4%, Gemini
-#    Decision 1 from 9.1% to 0.2%).
-# 7. **Latency and cost:** the local models answer one MCP description in a median of 7 ms or
-#    less. Jev 1.14 answered one chunk in a median of 58 ms at about $0.018 per 1,000 chunks; a
-#    median skill file is 6 chunks.
+# 6. **One appended note did little; a choice among six wrappers did more.** The note raised the
+#    median score of every model, and at 0.5 no model lost recall. At the validation thresholds,
+#    where the decision models block little to begin with, their recall fell (Jev 1.14 from 1.9%
+#    to 1.4%, Gemini Decision 1 from 9.1% to 0.2%). When the attacker keeps the lowest-scoring of
+#    the unchanged description and six fixed wrappers, recall at 0.5 falls from 57.7% to 47.2%
+#    for Jev 1.14 and from 64.7% to 0.0% for Gemini Decision 1. Each drop comes almost entirely
+#    from one wrapper. For Gemini Decision 1 it is a prefix that presents the description as a
+#    quoted documentation example (0.0% alone). For Jev 1.14 it is a suffix that denies each
+#    clause of the question (47.8% alone). At 0.5 the two trained models keep their recall (98.8%
+#    and 100%), and they also block 92% and 75% of the clean descriptions. At their validation
+#    thresholds their recall falls from 31.8% to 20.8% and from 37.7% to 28.2%.
+# 7. **Latency and cost:** the local models answer one MCP description in a median of 23 ms or
+#    less (logistic regression 0.3 ms, DistilBERT 7 ms, ProtectAI v2 22 ms). Jev 1.14 answered
+#    one chunk in a median of 57 ms at about $0.018 per 1,000 chunks; a median skill file is 6
+#    chunks.
+# 8. **The off-the-shelf detector sits between the two groups and blocks little.** ProtectAI v2
+#    ranks the unseen sets at AUROC 0.76 (skills), 0.91 (MCP) and 0.88 (deepset). At 0.5 it blocks
+#    20% of malicious skill files with 5.4% of benign ones, and 24% of poisoned MCP descriptions
+#    with 2.5% of clean ones. The 1% rule puts its threshold at 0.999997, where it blocks under 1%
+#    of both. Its training data is only partly disclosed, so its 0.98 on the primary test split
+#    may include texts it was trained on.
 #
 # **Limits.** One primary dataset with noisy labels; one run of DistilBERT per learning rate; the
 # MCP positives are synthetic (written for a benchmark) and longer than the clean descriptions;
 # the skills set comes from one registry and two campaigns; the hosted models can change without
-# notice; the evasion test is one fixed sentence, not an adaptive attacker. No text in the skills
+# notice. The evasion test is six fixed wrappers, not an attacker who optimises against the
+# detector: Nasr et al. bypassed 12 published defenses that way
+# ([arXiv:2510.09023](https://arxiv.org/abs/2510.09023)), and Pretext evaded a frozen skill
+# detector in up to 97% of attempts ([arXiv:2609.39607](https://arxiv.org/abs/2609.39607)). No text in the skills
 # or MCP sets hides instructions in invisible Unicode (zero-width characters, the tag block), and
 # one malicious skill file uses an HTML comment, so neither technique is measured here.
+#
+# **What a text score cannot decide.** Three limits hold for any model in this notebook.
+#
+# - The gate reads what a connector says. A remote MCP server can change what it does while its
+#   tool definition stays identical, and a skill can restore a payload at run time that was absent
+#   when it was scanned (packing of that kind passed every one of eight scanners in over 90% of
+#   cases, [arXiv:2607.02357](https://arxiv.org/abs/2607.02357)). The OWASP MCP Security Cheat
+#   Sheet's control for change is to hash the complete tool definition and require review when it
+#   changes, which needs no model.
+# - Malicious connectors are rare. One study confirmed 157 malicious skills among 98,380
+#   ([arXiv:2602.06547](https://arxiv.org/abs/2602.06547)), about 0.16%. At that rate a detector
+#   with Jev 1.14's skills result at 0.5 (91% recall, 1.8% of benign blocked) would be right in
+#   about 1 block in 13. A score at these error rates can order a review queue. It cannot be the
+#   only control, and the controls under it are the ones that bound damage: scoped credentials
+#   and a limit on where the agent can send data.
+# - Decisions here are per text. An MCP server has several tools, and a server is blocked when
+#   any one description is, so the false-block rate per server is higher than the rate per
+#   description reported above.
