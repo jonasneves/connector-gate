@@ -1,0 +1,41 @@
+set,model,threshold,TP,FN,FP,TN,F1
+primary test,logistic regression,validation,498,54,2,388,0.9467680608365019
+primary test,logistic regression,0.5,540,12,35,355,0.9582963620230701
+primary test,DistilBERT,validation,497,55,1,389,0.9466666666666667
+primary test,DistilBERT,0.5,540,12,20,370,0.9712230215827338
+primary test,ProtectAI v2,validation,348,204,1,389,0.7724750277469479
+primary test,ProtectAI v2,0.5,477,75,11,379,0.9173076923076923
+primary test,Jev 1.14,validation,27,525,0,390,0.09326424870466321
+primary test,Jev 1.14,0.5,331,221,20,370,0.7331118493909191
+primary test,Gemini Decision 1,validation,57,495,2,388,0.18657937806873978
+primary test,Gemini Decision 1,0.5,380,172,16,374,0.8016877637130801
+skills,logistic regression,validation,93,31,127,96,0.5406976744186046
+skills,logistic regression,0.5,124,0,221,2,0.5287846481876333
+skills,DistilBERT,validation,124,0,222,1,0.5276595744680851
+skills,DistilBERT,0.5,124,0,223,0,0.5265392781316348
+skills,ProtectAI v2,validation,1,123,0,223,0.016
+skills,ProtectAI v2,0.5,25,99,12,211,0.3105590062111801
+skills,Jev 1.14,validation,6,118,0,223,0.09230769230769231
+skills,Jev 1.14,0.5,113,11,4,219,0.9377593360995851
+skills,Gemini Decision 1,validation,29,95,0,223,0.3790849673202614
+skills,Gemini Decision 1,0.5,105,19,1,222,0.9130434782608695
+mcp,logistic regression,validation,154,331,68,257,0.43564356435643564
+mcp,logistic regression,0.5,479,6,299,26,0.7585114806017419
+mcp,DistilBERT,validation,183,302,64,261,0.5
+mcp,DistilBERT,0.5,485,0,244,81,0.7990115321252059
+mcp,ProtectAI v2,validation,2,483,1,324,0.00819672131147541
+mcp,ProtectAI v2,0.5,117,368,8,317,0.3836065573770492
+mcp,Jev 1.14,validation,9,476,0,325,0.03643724696356275
+mcp,Jev 1.14,0.5,280,205,0,325,0.7320261437908496
+mcp,Gemini Decision 1,validation,44,441,0,325,0.166351606805293
+mcp,Gemini Decision 1,0.5,314,171,0,325,0.785982478097622
+deepset,logistic regression,validation,76,187,27,372,0.41530054644808745
+deepset,logistic regression,0.5,231,32,310,89,0.5746268656716418
+deepset,DistilBERT,validation,121,142,43,356,0.5667447306791569
+deepset,DistilBERT,0.5,233,30,180,219,0.6893491124260355
+deepset,ProtectAI v2,validation,38,225,0,399,0.25249169435215946
+deepset,ProtectAI v2,0.5,109,154,4,395,0.5797872340425532
+deepset,Jev 1.14,validation,19,244,0,399,0.1347517730496454
+deepset,Jev 1.14,0.5,136,127,3,396,0.6766169154228856
+deepset,Gemini Decision 1,validation,18,245,0,399,0.12811387900355872
+deepset,Gemini Decision 1,0.5,124,139,1,398,0.6391752577319587

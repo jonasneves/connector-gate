@@ -302,6 +302,8 @@ pd.DataFrame(thresholds).T
 # - **Recall**: the share of malicious texts blocked. A miss is a poisoned connector reaching the agent.
 # - **FPR** (false positive rate): the share of benign texts blocked. Each one is a legitimate tool or skill a team cannot install.
 # - **Precision**: of the texts blocked, the share that were malicious.
+# - **F1**: the harmonic mean of precision and recall. It moves with a set's class balance, so it
+#   is given beside the confusion matrices below and the findings rest on recall and FPR.
 
 # %%
 def metrics(scored, labels, at):
@@ -321,6 +323,27 @@ table = pd.DataFrame([{"set": set_name, "model": model, "malicious": int(evaluat
                       for set_name, rows in EVAL_SETS.items() for model in scores])
 table.to_csv(RESULTS / "metrics.csv", index=False)
 table.set_index(["set", "model"]).round(3)
+
+# %% [markdown]
+# ### Confusion matrices
+#
+# The four counts behind each row above, at both thresholds. TP is a malicious text blocked, FN a
+# malicious text allowed, FP a benign text blocked and TN a benign text allowed.
+
+# %%
+confusion = []
+for set_name, rows in EVAL_SETS.items():
+    labels = evaluation.loc[rows[evaluation.index], "label"].values
+    for model in scores:
+        for name, threshold in thresholds[model].items():
+            blocked = scores.loc[rows[evaluation.index], model].values >= threshold
+            tp, fp = int((blocked & (labels == 1)).sum()), int((blocked & (labels == 0)).sum())
+            fn, tn = int((~blocked & (labels == 1)).sum()), int((~blocked & (labels == 0)).sum())
+            confusion.append({"set": set_name, "model": model, "threshold": name if name == "validation" else "0.5",
+                              "TP": tp, "FN": fn, "FP": fp, "TN": tn, "F1": 2 * tp / (2 * tp + fp + fn)})
+confusion = pd.DataFrame(confusion)
+confusion.to_csv(RESULTS / "confusion.csv", index=False)
+confusion.set_index(["set", "model", "threshold"]).round(3)
 
 # %%
 COLORS = {"logistic regression": "#2a78d6", "DistilBERT": "#eb6834", "ProtectAI v2": "#8a63d2",
@@ -518,7 +541,7 @@ latency.set_index("model").round(4)
 # %% [markdown]
 # ## 9. Findings
 #
-# Numbers are from the tables above (run of November 22, 2026).
+# Numbers are from the tables above (run of November 23, 2026).
 #
 # 1. **Both trained models score well on their own test split.** AUROC 0.995 (logistic
 #    regression) and 0.997 (DistilBERT), and at the validation threshold each blocks 90% of attacks
@@ -556,8 +579,8 @@ latency.set_index("model").round(4)
 #    clause of the question (47.8% alone). At 0.5 the two trained models keep their recall (98.8%
 #    and 100%), and they also block 92% and 75% of the clean descriptions. At their validation
 #    thresholds their recall falls from 31.8% to 20.8% and from 37.7% to 28.2%.
-# 7. **Latency and cost:** the local models answer one MCP description in a median of 23 ms or
-#    less (logistic regression 0.3 ms, DistilBERT 7 ms, ProtectAI v2 22 ms). Jev 1.14 answered
+# 7. **Latency and cost:** the local models answer one MCP description in a median of 27 ms or
+#    less (logistic regression 0.3 ms, DistilBERT 8 ms, ProtectAI v2 26 ms). Jev 1.14 answered
 #    one chunk in a median of 57 ms at about $0.018 per 1,000 chunks; a median skill file is 6
 #    chunks.
 # 8. **The off-the-shelf detector sits between the two groups and blocks little.** ProtectAI v2

@@ -63,7 +63,7 @@ Latency: the local models are timed on the development machine over 200 MCP desc
 
 ## Results
 
-Values come from `results/metrics.csv`, `results/evasion.csv`, `results/evasion-wrappers.csv` and `results/latency.csv`, written by the notebook run of November 22, 2026. Precision at both thresholds is in `results/metrics.csv`.
+Values come from `results/metrics.csv`, `results/evasion.csv`, `results/evasion-wrappers.csv` and `results/latency.csv`, written by the notebook run of November 23, 2026. Precision at both thresholds is in `results/metrics.csv`. The confusion matrix (TP, FN, FP, TN) and F1 of every model on every set at both thresholds are in `results/confusion.csv`.
 
 | Set | Model | AUROC | Recall (validation) | FPR (validation) | Recall (0.5) | FPR (0.5) |
 |---|---|---|---|---|---|---|
@@ -114,9 +114,9 @@ Latency per MCP description for the local models and per chunk for the hosted on
 
 | Model | Median ms | p95 ms | Median input tokens | USD per 1,000 chunks |
 |---|---|---|---|---|
-| logistic regression | 0.3 | 0.4 | | |
-| DistilBERT | 6.7 | 10.9 | | |
-| ProtectAI v2 | 22.5 | 38.5 | | |
+| logistic regression | 0.3 | 0.6 | | |
+| DistilBERT | 7.5 | 11.7 | | |
+| ProtectAI v2 | 26.3 | 40.6 | | |
 | Jev 1.14 | 57.3 | 88.6 | 424 | 0.018 |
 | Gemini Decision 1 | 193.3 | 382.4 | 241 | |
 
@@ -130,7 +130,7 @@ Figures are in `results/figures/`: `roc.png`, `recall-fpr.png`, `recall-fpr-half
 4. The validation threshold does not transfer. The 1% rule places the decision models' thresholds near 0.98, and at that threshold they block 2% to 23% of the malicious texts in the skills and MCP sets. At 0.5, Jev 1.14 blocks 91% of malicious skill files with 1.8% of benign ones, and 58% of poisoned MCP descriptions with none of the clean ones.
 5. Most of the logistic regression's largest weights (18 of the top 20) are pieces of one phrase, "I have been PWNED", which attackers had to produce in the HackAPrompt competition (a source of the primary set, according to its dataset card). This is a property of the dataset and is evidence about the logistic regression only. It does not explain the false blocks on skill files, which do not contain the phrase, and nothing in the project shows what DistilBERT relies on. Two candidate causes were not examined: taking the maximum over a file's chunks (a median of 6 per skill file), and the change from 56-character training prompts to 1,000-character chunks.
 6. One appended note did little, and a choice among six wrappers did more. The note raised the median score of every model, and at 0.5 no model lost recall. At the validation thresholds, where the decision models block little without the note, their recall fell (Jev 1.14 from 1.9% to 1.4%, Gemini Decision 1 from 9.1% to 0.2%). When the attacker keeps the lowest-scoring of the unchanged description and six fixed wrappers, recall at 0.5 falls from 57.7% to 47.2% for Jev 1.14 and from 64.7% to 0.0% for Gemini Decision 1. Each drop comes almost entirely from one wrapper. For Gemini Decision 1 it is a prefix that presents the description as a quoted documentation example (0.0% alone). For Jev 1.14 it is a suffix that denies each clause of `QUESTION` (47.8% alone). At 0.5 the two trained models keep their recall (98.8% and 100%), and they also block 92% and 75% of the clean descriptions. At their validation thresholds their recall falls from 31.8% to 20.8% and from 37.7% to 28.2%.
-7. The local models score one MCP description in a median of 23 ms or less (logistic regression 0.3 ms, DistilBERT 7 ms, ProtectAI v2 22 ms). Jev 1.14 answered one chunk in a median of 57 ms at about $0.018 per 1,000 chunks, and a median skill file is 6 chunks.
+7. The local models score one MCP description in a median of 27 ms or less (logistic regression 0.3 ms, DistilBERT 8 ms, ProtectAI v2 26 ms). Jev 1.14 answered one chunk in a median of 57 ms at about $0.018 per 1,000 chunks, and a median skill file is 6 chunks.
 8. The off-the-shelf detector sits between the two groups and blocks little. ProtectAI v2 ranks the secondary sets at AUROC 0.76 (skills), 0.91 (MCP) and 0.88 (deepset). At 0.5 it blocks 20% of malicious skill files with 5.4% of benign ones, and 24% of poisoned MCP descriptions with 2.5% of clean ones. The 1% rule puts its threshold at 0.999997, where it blocks under 1% of both. Its training data is only partly disclosed, so its 0.98 on the primary test split may include texts it was trained on.
 
 ## Limits
@@ -211,7 +211,7 @@ The app accepts a JSON tool list (one decision per tool description) or any othe
 | `pyproject.toml`, `uv.lock` | The development environment. |
 | `data/` | `sets.parquet` and the raw downloads (`data/raw/`, not committed). |
 | `models/` | `baseline.joblib`, `thresholds.json` and `distilbert/` (not committed; step 3 writes it). |
-| `results/` | `metrics.csv`, `evasion.csv`, `evasion-wrappers.csv`, `latency.csv`, `scores.parquet`, the two `decision-*.jsonl` files and `figures/`. |
+| `results/` | `metrics.csv`, `confusion.csv`, `evasion.csv`, `evasion-wrappers.csv`, `latency.csv`, `scores.parquet`, the two `decision-*.jsonl` files and `figures/`. |
 
 `joblib.load` runs code on load, so `models/baseline.joblib` must only ever be the file the notebook wrote.
 
