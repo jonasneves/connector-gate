@@ -10,6 +10,6 @@ COPY --chown=user app.py gate.py decision.py ./
 COPY --chown=user models/baseline.joblib models/thresholds.json models/
 COPY --chown=user models/distilbert models/distilbert
 # The app's table of measured results reads this file.
-COPY --chown=user results/metrics.csv results/
+COPY --chown=user results/metrics.csv results/question-variant.csv results/
 EXPOSE 7860
 CMD ["python", "app.py"]

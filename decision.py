@@ -38,9 +38,10 @@ def evaluation_chunks():
     return list(dict.fromkeys(piece for text in texts for piece in chunks(text)))
 
 
-def session(name, timeout=8, attempts=6):
+def session(name, timeout=8, attempts=6, questions=None):
     """A function that asks one hosted model about one text. The app passes a short timeout and few
-    attempts, because a person is waiting; the batch run keeps the defaults."""
+    attempts, because a person is waiting; the batch run keeps the defaults. With `questions` (a name
+    for each instruction) the result carries one answer per name in place of the single `p`."""
     url, key_env, model = MODELS[name]
     u = urlsplit(url)
     auth = {"x-goog-api-key": os.environ[key_env]} if name == "gemini" else {"authorization": f"Bearer {os.environ[key_env]}"}
@@ -49,7 +50,7 @@ def session(name, timeout=8, attempts=6):
     def ask(text):
         nonlocal conn
         body = {"model": model, "state" if name == "jev" else "input": text,
-                "questions": {"malicious": {"type": "noul", "instructions": QUESTION}}}
+                "questions": {k: {"type": "noul", "instructions": q} for k, q in (questions or {"malicious": QUESTION}).items()}}
         for attempt in range(attempts):
             start = time.perf_counter()
             try:
@@ -74,6 +75,8 @@ def session(name, timeout=8, attempts=6):
             if res.status != 200:
                 raise RuntimeError(f"{name} {res.status}: {data[:300]!r}")
             usage = response["usage"]
+            if questions:
+                return {"answers": {k: v["noul"] for k, v in response["answers"].items()}, "ms": round(ms, 1)}
             return {"p": response["answers"]["malicious"]["noul"], "ms": round(ms, 1),
                     "input_tokens": usage.get("input_tokens", usage.get("total_input_tokens"))}
         raise RuntimeError(f"{name}: retries exhausted")

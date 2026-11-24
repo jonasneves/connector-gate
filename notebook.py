@@ -1069,3 +1069,6 @@ variant.set_index(["group", "method"])[["malicious", "benign", "AUROC", "caught 
 # from the same sources. The name and stated purpose shown to the model are written by the same
 # author as the text, so an attacker can choose a name that makes the payload look expected. Not
 # run on Gemini Decision 1.
+#
+# The app offers this as a second deciding model, `Jev 1.14, asked about purpose`, beside the one
+# question.
