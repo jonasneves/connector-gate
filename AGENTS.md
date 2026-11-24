@@ -346,14 +346,14 @@ Requires [uv](https://docs.astral.sh/uv/) and Python 3.12 or later. Run the step
 6. Deploy to the Duke VM (needs SSH access to it). The script copies the app and the saved models, builds the image there with rootless Podman and restarts the service. The hosted models' keys that are set are written to an owner-only file on the VM.
 
    ```sh
-   TYPESAFE_API_KEY=... GEMINI_API_KEY=... ./deploy.sh
+   DEPLOY_HOST=user@host TYPESAFE_API_KEY=... GEMINI_API_KEY=... ./deploy.sh
    ```
 
 ## Deployment
 
 Live app: <https://connector-gate.colab.duke.edu>
 
-The container runs on a Duke VCM virtual machine (2 vCPU, 3.3 GiB, shared with another project) as a Podman Quadlet user service (`connector-gate.container`): port 7860 published on `127.0.0.1:8081`, memory limited to 1.5 GiB, restarted on failure and at boot. Caddy on the VM terminates TLS and routes the hostname to that port; its configuration is in `jonasneves/infra` under `duke/`. A VCM reservation lasts one semester and has no uptime guarantee. Hugging Face Spaces was not used because Docker and Gradio Spaces on the free CPU tier required a paid subscription (November 2026).
+The container runs on a Duke VCM virtual machine (2 vCPU, 3.3 GiB) as a Podman Quadlet user service (`connector-gate.container`): port 7860 published on `127.0.0.1:8081`, memory limited to 1.5 GiB, restarted on failure and at boot. Caddy on the VM terminates TLS and routes the hostname to that port. A VCM reservation lasts one semester and has no uptime guarantee. Hugging Face Spaces was not used because Docker and Gradio Spaces on the free CPU tier required a paid subscription (November 2026).
 
 The app accepts a JSON tool list (one decision per tool) or any other text such as a `SKILL.md` (one decision). For a tool it screens the description together with the description of each argument in the tool's input schema. The two trained models and the hosted models whose keys are set score each item; ProtectAI v2 and Horizon Guard are evaluated in the notebook only and are not in the app. The model chosen under "Deciding model" gives the item's verdict, and the others are listed beside it with score, threshold and latency. An item that contains invisible Unicode characters is blocked by rule, whatever its scores, and carries a notice with the count. Each item shows the first 12 characters of a SHA-256 fingerprint of the whole tool definition or file, with the full hash in its tooltip; the app does not store fingerprints. Under the results, a table read from `results/metrics.csv` gives each model's share blocked on the MCP and skills sets at the chosen threshold. Four examples load with one click: a tool list with one poisoned tool, a skill that runs a download, a skill with an instruction in an HTML comment, and the poisoned tool behind the quoted-documentation wrapper from the evasion test. The app rejects pasted text over 60,000 characters or 75 chunks and handles one request at a time.
 
@@ -373,7 +373,7 @@ The app accepts a JSON tool list (one decision per tool) or any other text such 
 | `slides.pdf` | The same deck rendered by LibreOffice, for viewers that do not draw its charts (Keynote drops them). |
 | `Dockerfile`, `requirements.txt` | The app's image, with CPU-only PyTorch and pinned versions. |
 | `pyproject.toml`, `uv.lock` | The development environment. |
-| `data/` | `sets.parquet` and the raw downloads (`data/raw/`, not committed). |
+| `data/` | `sets.parquet` and the raw downloads (not committed; `data.py` writes them). |
 | `models/` | `baseline.joblib`, `thresholds.json` and `distilbert/` (not committed; step 3 writes it). |
 | `results/` | `metrics.csv`, `confusion.csv`, `intervals.csv`, `skillbench-sources.csv`, `disputed-labels.csv`, `chunks.csv`, `calibrated.csv`, `mcp-templates.csv`, `review-queue.csv`, `per-server.csv`, `evasion.csv`, `evasion-wrappers.csv`, `latency.csv`, `scores.parquet`, the two `decision-*.jsonl` files and `figures/`. |
 

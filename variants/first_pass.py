@@ -1,7 +1,8 @@
 """Scores the connector sets' chunks with a hosted model under a variant question. Resumable."""
 import json, sys, time
 from pathlib import Path
-sys.path.insert(0, "/Users/jonasneves/github.com/jonasneves/connector-gate")
+ROOT = Path(__file__).parent.parent
+sys.path.insert(0, str(ROOT))
 import pandas as pd
 import decision
 from gate import chunks
@@ -12,8 +13,8 @@ VARIANTS = {
 }
 model, variant = sys.argv[1], sys.argv[2]
 decision.QUESTION = VARIANTS[variant]
-out = Path(__file__).parent / f"{model}-{variant}.jsonl"
-sets = pd.read_parquet("/Users/jonasneves/github.com/jonasneves/connector-gate/data/sets.parquet")
+out = ROOT / "results" / "variants" / f"{model}-{variant}.jsonl"
+sets = pd.read_parquet(ROOT / "data" / "sets.parquet")
 texts = sets.loc[sets["set"].isin(["skills", "skillbench", "mcp"]), "text"]
 pieces = list(dict.fromkeys(p for t in texts for p in chunks(t)))
 done = {json.loads(l)["key"] for l in out.read_text().splitlines()} if out.exists() else set()
