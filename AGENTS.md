@@ -368,6 +368,7 @@ The app accepts a JSON tool list (one decision per tool) or any other text such 
 | `app.py` | Gradio app. |
 | `deploy.sh`, `connector-gate.container` | Deploys the app to the Duke VM, and the Quadlet unit that runs the container there. |
 | `slides.pptx` | Project slides, built by `slides/build.js` from `results/`; `slides/clips/` holds the captures of cited pages. |
+| `slides.pdf` | The same deck rendered by LibreOffice, for viewers that do not draw its charts (Keynote drops them). |
 | `Dockerfile`, `requirements.txt` | The app's image, with CPU-only PyTorch and pinned versions. |
 | `pyproject.toml`, `uv.lock` | The development environment. |
 | `data/` | `sets.parquet` and the raw downloads (`data/raw/`, not committed). |

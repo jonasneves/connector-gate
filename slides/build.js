@@ -62,12 +62,13 @@ const shift = (s, x, y, from, to, o = {}) => {
   const size = o.size || 66, w = o.w || 2.3;
   T(s, from, { x, y, w, h: 1.1, fontSize: size, bold: true, color: o.fromColor || C.accent1, fontFace: THEME.headFontFace, align: "center" });
   s.addShape(pres.ShapeType.rightArrow, { x: x + w + 0.1, y: y + 0.38, w: 0.6, h: 0.42, fill: { color: C.accent5 }, line: { color: C.accent5 }, objectName: "arrow " + from });
-  T(s, to, { x: x + w + 0.8, y, w, h: 1.1, fontSize: size, bold: true, color: C.accent6, fontFace: THEME.headFontFace, align: "center" });
+  T(s, to, { x: x + w + 0.8, y, w, h: 1.1, fontSize: size, bold: true, color: o.toColor || C.accent6, fontFace: THEME.headFontFace, align: "center" });
 };
 const axis = { valAxisLabelColor: "475569", catAxisLabelColor: "0F1F1D", valAxisLabelFontFace: "+mn-lt", catAxisLabelFontFace: "+mn-lt", valAxisLabelFontSize: 11, catAxisLabelFontSize: 13,
   valGridLine: { color: "E2E8F0", size: 0.5 }, catGridLine: { style: "none" }, legendFontSize: 12, legendFontFace: "+mn-lt", legendColor: "0F1F1D",
   titleFontSize: 13, titleFontFace: "+mn-lt", titleColor: "475569", dataLabelFontFace: "+mn-lt", dataLabelColor: "334155" };
-const COLOR = { [L]: "2A78D6", [D]: "EB6834", [P]: "8B5CF6", [H]: "D6408F", [J]: "1BAF7A", [G]: "EDA100" };
+// One color per model on every slide; dark enough to be read as text (3:1 or more on the card fill).
+const COLOR = { [L]: "2A78D6", [D]: "D9531E", [P]: "8B5CF6", [H]: "D6408F", [J]: "0E8F62", [G]: "B97C00" };
 let s;
 pres.addSection({ title: "Briefing" });
 pres.addSection({ title: "Backup" });
@@ -77,7 +78,7 @@ const add = (master, section = "Briefing") => pres.addSlide({ masterName: master
 s = add("Dark");
 s.addText("Connector gate: screening what an AI agent loads", { placeholder: "title" });
 s.addText("Jonas Neves · CYBERSEC 520 final project · November 24, 2026", { placeholder: "body" });
-s.addNotes("Hi, I'm Jonas. My project is a gate that screens what an AI agent installs. It's a different topic from my proposal, because I couldn't generate enough lab traffic for that one.");
+s.addNotes("Hi, I'm Jonas. My project is a gate that screens what an AI agent installs.");
 
 // 2
 s = add("Content");
@@ -106,10 +107,10 @@ s.addChart(pres.charts.BAR, models3.map(([m, name]) => ({ name, labels: sets3.ma
 const conn = ["skills", "skillbench", "mcp"].map(k => +M[k][D].AUROC);
 card(s, 9.75, 1.6, 2.95, 4.9, "card drop");
 T(s, "DistilBERT", { x: 9.95, y: 1.8, w: 2.55, h: 0.35, fontSize: 14, color: C.accent5 });
-T(s, (+M["primary test"][D].AUROC).toFixed(3), { x: 9.95, y: 2.15, w: 2.55, h: 0.95, fontSize: 54, bold: true, color: C.accent1, fontFace: THEME.headFontFace });
+T(s, (+M["primary test"][D].AUROC).toFixed(3), { x: 9.95, y: 2.15, w: 2.55, h: 0.95, fontSize: 54, bold: true, color: COLOR[D], fontFace: THEME.headFontFace });
 T(s, "on its own test set", { x: 9.95, y: 3.1, w: 2.55, h: 0.35, fontSize: 15 });
 s.addShape(pres.ShapeType.downArrow, { x: 10.95, y: 3.6, w: 0.45, h: 0.5, fill: { color: C.accent5 }, line: { color: C.accent5 }, objectName: "arrow down" });
-T(s, `${f2(Math.min(...conn))} to ${f2(Math.max(...conn))}`, { x: 9.95, y: 4.25, w: 2.55, h: 1.5, fontSize: 40, bold: true, color: C.accent6, fontFace: THEME.headFontFace });
+T(s, `${f2(Math.min(...conn))} to ${f2(Math.max(...conn))}`, { x: 9.95, y: 4.25, w: 2.55, h: 1.5, fontSize: 40, bold: true, color: COLOR[D], fontFace: THEME.headFontFace });
 T(s, "on connector content", { x: 9.95, y: 5.75, w: 2.55, h: 0.35, fontSize: 15 });
 src(s, `results/metrics.csv · 95% intervals in results/intervals.csv (DistilBERT on skill files: ${IV.skills[D].AUROC}) · Horizon Guard's training data includes the primary set, so its first bar is not held-out · in the third group nearly all benign and malicious files come from different sources, so that AUROC partly measures the sources`);
 s.addNotes(`I trained a detector on about 4,400 labeled prompt-injection examples. That's the orange bar. On its own test set, far left, it scores 0.997.\nOn skill files and MCP tool descriptions, which it never saw, it scores between ${f2(Math.min(...conn))} and ${f2(Math.max(...conn))}, and 0.5 is a coin flip.\nPink is a detector published last month, used as downloaded. Green and yellow are two hosted models that answer one yes-or-no question about the text, with no training. They score 0.97 to 0.99 on the first skills set and on tool descriptions, and lower on the second skills set, which I added yesterday.`);
@@ -134,7 +135,7 @@ s.addNotes(`Here is what each model blocks on the first set of skill files, at a
 // 5
 s = add("Content");
 s.addText("On skill files from other sources, the hosted models catch one in three", { placeholder: "title" });
-shift(s, 0.6, 1.5, p0(M.skills[J][HALF]), p0(M.skillbench[J][HALF]));
+shift(s, 0.6, 1.5, p0(M.skills[J][HALF]), p0(M.skillbench[J][HALF]), { fromColor: COLOR[J], toColor: COLOR[J] });
 T(s, `Malicious skill files blocked by Jev 1.14 at 0.5: first set, then ${(+M.skillbench[J].malicious).toLocaleString("en-US")} files from three other sources`, { x: 0.6, y: 2.65, w: 5.6, h: 0.6, fontSize: 14 });
 const cats = [["SkillFortifyBench, synthetic", "Synthetic (90)"], ["ATR Skill Security Benchmark, test_fixture", "Scanner test fixtures (14)"], ["ATR Skill Security Benchmark, wild", "Found in registries (7)"],
   ["SkillHarm, injected", "Injected into a real skill (570)"], ["SkillHarm, backdoored", "Backdoor in a bundled file (158)"]];
@@ -157,11 +158,11 @@ s.addNotes(`Yesterday I tested that conclusion on skill files from three other s
 // 6
 s = add("Content");
 s.addText("A short preface in front of a poisoned tool takes Gemini Decision 1 from 65% to zero", { placeholder: "title" });
-shift(s, 0.6, 1.6, p0(EV[G][HALF]), p0(EV[G][PICK]));
+shift(s, 0.6, 1.6, p0(EV[G][HALF]), p0(EV[G][PICK]), { fromColor: "64748B", toColor: "B91C1C" });
 T(s, "Poisoned MCP tool descriptions blocked by Gemini Decision 1 at 0.5, before and after an attacker picks among six fixed wrappers", { x: 0.6, y: 2.75, w: 5.6, h: 0.9, fontSize: 14 });
 s.addChart(pres.charts.BAR, [{ name: "As written", labels: [H, J, G], values: [H, J, G].map(m => +(+EV[m][HALF]).toFixed(3)) },
                              { name: "With the attacker's pick", labels: [H, J, G], values: [H, J, G].map(m => +(+EV[m][PICK]).toFixed(3)) }], {
-  x: 0.6, y: 3.7, w: 5.9, h: 3.05, barDir: "bar", barGrouping: "clustered", barGapWidthPct: 40, chartColors: ["94A3B8", "B91C1C"],
+  x: 0.6, y: 3.7, w: 5.9, h: 3.05, barDir: "bar", barGrouping: "clustered", barGapWidthPct: 40, chartColors: ["64748B", "B91C1C"],
   showLegend: true, legendPos: "b", showValue: true, dataLabelPosition: "outEnd", dataLabelFontSize: 11, dataLabelFormatCode: "0%",
   valAxisMinVal: 0, valAxisMaxVal: 1, valAxisLabelFormatCode: "0%", catAxisOrientation: "maxMin", ...axis, catAxisLabelFontSize: 12 });
 card(s, 6.75, 1.5, 5.95, 5.2, "card wrapper");
@@ -196,12 +197,12 @@ s.addNotes(`So the score is the third of four controls.\nFirst, allow a connecto
 // 8
 s = add("Content");
 s.addText("Three recommendations", { placeholder: "title" });
-const asks = [[`${(+M["primary test"][D].AUROC).toFixed(3)} → ${f2(Math.min(...conn))}`, "Test any detector on your own connectors", "DistilBERT's AUROC: its own test set, then connector content. The first did not predict the second."],
-  [`${p0(M.skills[J][HALF])} → ${p0(M.skillbench[J][HALF])}`, "Use the score to rank review, in log-only mode first", "Malicious skill files blocked by Jev 1.14: first set, then a second set from other sources."],
-  [`${p0(EV[G][HALF])} → ${p0(EV[G][PICK])}`, "Fund the other three controls", "Poisoned tools blocked by Gemini Decision 1, before and after a wrapper. Pinning, scoped credentials and outbound limits do not depend on the score."]];
-asks.forEach(([big, k, v], i) => { const y = 1.5 + i * 1.7;
+const asks = [[`${(+M["primary test"][D].AUROC).toFixed(3)} → ${f2(Math.min(...conn))}`, COLOR[D], "Test any detector on your own connectors", "DistilBERT's AUROC: its own test set, then connector content. The first did not predict the second."],
+  [`${p0(M.skills[J][HALF])} → ${p0(M.skillbench[J][HALF])}`, COLOR[J], "Use the score to rank review, in log-only mode first", "Malicious skill files blocked by Jev 1.14: first set, then a second set from other sources."],
+  [`${p0(EV[G][HALF])} → ${p0(EV[G][PICK])}`, COLOR[G], "Fund the other three controls", "Poisoned tools blocked by Gemini Decision 1, before and after a wrapper. Pinning, scoped credentials and outbound limits do not depend on the score."]];
+asks.forEach(([big, color, k, v], i) => { const y = 1.5 + i * 1.7;
   card(s, 0.6, y, 12.1, 1.5, "card ask " + (i + 1));
-  T(s, big, { x: 0.85, y: y + 0.28, w: 4.3, h: 1.0, fontSize: 40, bold: true, color: C.accent6, fontFace: THEME.headFontFace, valign: "middle" });
+  T(s, big, { x: 0.85, y: y + 0.28, w: 4.3, h: 1.0, fontSize: 40, bold: true, color, fontFace: THEME.headFontFace, valign: "middle" });
   T(s, k, { x: 5.3, y: y + 0.22, w: 7.2, h: 0.5, fontSize: 22, bold: true, fontFace: THEME.headFontFace });
   T(s, v, { x: 5.3, y: y + 0.82, w: 7.2, h: 0.5, fontSize: 15, color: C.accent5 }); });
 src(s, "results/metrics.csv and results/evasion.csv · limits and the analyses added after the first results are listed on the backup slides and in notebook section 9");
@@ -274,7 +275,7 @@ const why = [["What the logistic regression learned", [{ text: "pwned · been ·
     { text: "18 of its 20 heaviest features are pieces of “I have been PWNED”, the phrase attackers had to produce in the HackAPrompt competition, a source of the primary set.", options: {} }]],
   ["Disputed labels set the threshold", [{ text: "13 of 407", options: { bold: true, fontSize: 22, color: C.accent6, breakLine: true } },
     { text: `benign validation prompts read as jailbreaks and score 0.5 or more on both hosted models. Without them the 1% rule moves Jev 1.14's threshold from ${f2(DISP[J]["validation threshold"])} to ${f2(DISP[J]["without the disputed rows"])}, where it blocks ${p0(DISP[J]["skills recall"])} of malicious files in the first skills set and ${pct(DISP[J]["skills FPR"])} of benign ones. Circular for the hosted models, whose scores chose the rows.`, options: {} }]],
-  ["A threshold set on your own benign connectors", [{ text: `${p0(CAL.skills[G]["recall, validation threshold"])} → ${p0(CAL.skills[G].recall)}`, options: { bold: true, fontSize: 22, color: C.accent1, breakLine: true } },
+  ["A threshold set on your own benign connectors", [{ text: `${p0(CAL.skills[G]["recall, validation threshold"])} → ${p0(CAL.skills[G].recall)}`, options: { bold: true, fontSize: 22, color: COLOR[G], breakLine: true } },
     { text: `Gemini Decision 1 on the first skills set, at about 1% of benign files blocked (median of 200 splits). Jev 1.14: ${p0(CAL.skills[J]["recall, validation threshold"])} → ${p0(CAL.skills[J].recall)}, and ${p0(CAL.skills[J]["recall low"])} to ${p0(CAL.skills[J]["recall high"])} across splits. On the second skills set it reaches ${p0(CAL.skillbench[G].recall)} and ${p0(CAL.skillbench[J].recall)}.`, options: {} }]]];
 why.forEach(([k, body], i) => { const x = 0.6 + i * 4.1;
   card(s, x, 1.5, 3.9, 5.1, "card why " + i);
@@ -298,4 +299,23 @@ src(s, "Notebook section 9, Limits");
 s.addNotes("Backup. The limits of the evaluation.");
 
 module.exports = { pres };
-if (require.main === module) (async () => { await pres.writeFile({ fileName: `${REPO}/slides.pptx` }); await applyTheme(`${REPO}/slides.pptx`, THEME); console.log("written"); })();
+// pptxgenjs writes category names as a multi-level reference and values with format "General".
+// Keynote and Google Slides read neither, and show 1, 2, 3 for categories and 1 for 1.00, so each
+// chart is rewritten to a plain string reference and its values carry the data-label format.
+const fixCharts = async file => {
+  const JSZip = require("jszip");
+  const zip = await JSZip.loadAsync(fs.readFileSync(file));
+  for (const name of Object.keys(zip.files).filter(n => /^ppt\/charts\/chart\d+\.xml$/.test(n))) {
+    let xml = await zip.file(name).async("string");
+    xml = xml.replace(/<c:cat>\s*<c:multiLvlStrRef>([\s\S]*?)<\/c:multiLvlStrRef>\s*<\/c:cat>/g, (m, inner) =>
+      "<c:cat><c:strRef>" + inner.replace(/<c:multiLvlStrCache>/, "<c:strCache>").replace(/<\/c:multiLvlStrCache>/, "</c:strCache>")
+        .replace(/<c:lvl>/, "").replace(/<\/c:lvl>/, "") + "</c:strRef></c:cat>");
+    const label = (xml.match(/<c:dLbls>[\s\S]*?<c:numFmt formatCode="([^"]+)"/) || [])[1];
+    if (label) xml = xml.replace(/(<c:numCache>\s*<c:formatCode>)General(<\/c:formatCode>)/g, `$1${label}$2`);
+    zip.file(name, xml);
+  }
+  for (const name of Object.keys(zip.files)) if (zip.files[name].dir) delete zip.files[name];  // cloud viewers reject folder entries
+  fs.writeFileSync(file, await zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" }));
+};
+if (require.main === module) (async () => { const out = `${REPO}/slides.pptx`;
+  await pres.writeFile({ fileName: out }); await applyTheme(out, THEME); await fixCharts(out); console.log("written"); })();
