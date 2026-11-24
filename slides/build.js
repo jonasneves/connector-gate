@@ -227,7 +227,7 @@ s.addImage({ path: `${CLIPS}/app.png`, x: 8.1, y: 0.5, w: 4.55, h: 4.55 * 917 / 
 s.addText("Live demo", { placeholder: "title" });
 T(s, "connector-gate.colab.duke.edu", { x: 0.8, y: 3.3, w: 6.2, h: 0.5, fontSize: 24, color: C.background1 });
 T(s, "The gate screens a tool list. Then a tool the first question allows.", { x: 0.8, y: 4.0, w: 6.0, h: 1.0, fontSize: 18, color: C.background2 });
-T(s, "Generative AI: Claude Code wrote the code, notebook and slides (Claude Opus 5.5 on November 22, Claude Fable 5.2 on November 23, 2026).", { x: 0.8, y: 6.2, w: 6.0, h: 0.6, fontSize: 11, color: C.background2 });
+T(s, "Generative AI: Claude Code wrote the code, notebook and slides (November 22 to 24, 2026).", { x: 0.8, y: 6.2, w: 6.0, h: 0.6, fontSize: 11, color: C.background2 });
 s.addNotes("This is the app, on a Duke VM. It opens with an MCP tool list.\n[Point at search_notes.] search_notes is harmless, and the two models trained on prompt injection block it. The hosted model allows it and blocks only add_numbers, which asks for the user's SSH key.\n[Click \"Example: mail tool that copies an outside address\".] This tool says it adds a signature, and tells the agent to copy an outside address on every email. Asked the first question, Jev allows it.\n[Under Deciding model, choose \"Jev 1.14, asked about purpose\".] Shown what the tool is for, it blocks it.\nThat's the project. I'll take questions.\n[If asked why a hosted model shows 0 ms: the app keeps the first score it gets for a text, so a repeated example is not sent again.]");
 
 // ---------- Backup ----------

@@ -381,4 +381,4 @@ The app accepts a JSON tool list (one decision per tool) or any other text such 
 
 ## AI use
 
-Claude Code wrote the code (including `deploy.sh`), the notebook, the slides (`slides.pptx`) and this document, with Claude Opus 5.5 on November 22, 2026 and Claude Fable 5.2 on November 23, 2026.
+Claude Code wrote the code (including `deploy.sh`), the notebook, the slides (`slides.pptx`) and this document, on November 22 to 24, 2026.
