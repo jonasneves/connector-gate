@@ -26,6 +26,8 @@ const CAL = {}; for (const r of csv("calibrated")) (CAL[r.set] ??= {})[r.model] 
 const SERVER = {}; for (const r of csv("per-server")) (SERVER[r.model] ??= {})[r.threshold] = r;
 const EV = Object.fromEntries(csv("evasion").map(r => [r.model, r]));
 const DISP = Object.fromEntries(csv("disputed-labels").map(r => [r.model, r]));
+// The hosted models' one question, read from gate.py so the slide shows the exact wording sent.
+const QUESTION = eval(fs.readFileSync(`${REPO}/gate.py`, "utf8").match(/^QUESTION = \(([\s\S]*?)\)\n/m)[1].trim().split(/\n\s*/).join(" + "));
 const pct = v => { v = +v; return (v * 100).toFixed((v > 0 && v < 0.1) || (v > 0.99 && v < 1) ? 1 : 0) + "%"; };
 const p0 = v => Math.round(+v * 100) + "%";
 const f2 = v => (+v).toFixed(2);
@@ -246,8 +248,9 @@ s.addTable([[{ text: "Set", options: head({ align: "left" }) }, { text: "What a 
   { x: 0.6, y: 1.45, w: 12.1, colW: [3.6, 2.8, 1.0, 0.9, 3.8], rowH: 0.5, border: { type: "solid", color: "E2E8F0", pt: 0.75 }, valign: "middle", fontFace: THEME.bodyFontFace });
 T(s, [{ text: "Models. ", options: { bold: true } }, { text: "Trained here: logistic regression on TF-IDF, and a fine-tuned DistilBERT. Used as published: ProtectAI v2 (its card says the project is archived), Horizon Guard (October 2026), and two hosted decision models that answer one yes/no question, Jev 1.14 and Gemini Decision 1.", options: { breakLine: true } },
       { text: "Scoring. ", options: { bold: true } }, { text: "A long text is cut into 1,000-character chunks and takes the score of its highest chunk.", options: { breakLine: true } },
-      { text: "Thresholds. ", options: { bold: true } }, { text: "One fixed on primary validation before any result (at most 1% of benign prompts blocked). One at 0.5, added after the first results.", options: {} }],
-  { x: 0.6, y: 4.6, w: 12.1, h: 2.1, fontSize: 14.5, paraSpaceAfter: 6 });
+      { text: "Thresholds. ", options: { bold: true } }, { text: "One fixed on primary validation before any result (at most 1% of benign prompts blocked). One at 0.5, added after the first results.", options: { breakLine: true } },
+      { text: "The hosted models' question. ", options: { bold: true } }, { text: `“${QUESTION}”`, options: { italic: true } }],
+  { x: 0.6, y: 4.55, w: 12.1, h: 2.25, fontSize: 13, paraSpaceAfter: 4 });
 src(s, "Counts: results/metrics.csv · sources, licences and pinned revisions: notebook section 1, data.py and gate.py");
 s.addNotes("Backup. Five datasets. The two models I trained saw only the primary set. A long file is scored by its worst chunk. Two thresholds: one fixed before the results, and 0.5, added after.");
 
