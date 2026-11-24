@@ -91,3 +91,7 @@ The notebook reads the hosted models' saved answers from `results/`, so these st
 ## Course context and AI use
 
 Final project for CYBERSEC 520 (Duke University, Fall 2026) by Jonas Neves. Claude Code wrote the code, the notebook, the slides and the documentation, with Claude Opus 5.5 on November 22, 2026 and Claude Fable 5.2 on November 23 and 24, 2026.
+
+## Licence
+
+The code is under the [MIT licence](LICENSE). Each dataset keeps its publisher's terms, listed in [AGENTS.md › Datasets](AGENTS.md#datasets).
