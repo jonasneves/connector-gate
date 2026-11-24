@@ -22,6 +22,7 @@ import dev as D  # noqa: E402
 from decision import key  # noqa: E402
 from gate import chunks  # noqa: E402
 
+ASKED = "Jev 1.14, asked about purpose"
 saved = pd.read_json(D.ROOT / "results" / "decision-jev.jsonl", lines=True).drop_duplicates("key").set_index("key")["p"]
 
 
@@ -57,3 +58,18 @@ if __name__ == "__main__":
     out.to_csv(D.ROOT / "results" / "question-variant.csv", index=False)
     pd.set_option("display.width", 250)
     print(out.round(3).to_string(index=False))
+
+    # Every model on these same files at 0.5, from the per-file scores the notebook saved.
+    saved_scores = pd.read_parquet(D.ROOT / "results" / "scores.parquet").drop(columns=["label", "kind", "split"])
+    every = held.merge(saved_scores, on=["set", "id"], how="left", validate="one_to_one")
+    every[ASKED] = hscore["three"].values
+    models = [c for c in saved_scores.columns if c not in ("set", "id")] + [ASKED]
+    groups = {"MCP tool descriptions": every["set"] == "mcp", "skill files, first set": every["set"] == "skills",
+              "skill files, other sources": every["set"] == "skillbench", "all connector files": every["set"].notna()}
+    compared = pd.DataFrame([{"group": group, "model": model, "malicious": int((mask & (every["label"] == 1)).sum()),
+                              "benign": int((mask & (every["label"] == 0)).sum()),
+                              "caught at 0.5": (every.loc[mask & (every["label"] == 1), model] >= .5).mean(),
+                              "benign blocked at 0.5": (every.loc[mask & (every["label"] == 0), model] >= .5).mean()}
+                             for group, mask in groups.items() for model in models])
+    compared.to_csv(D.ROOT / "results" / "comparison.csv", index=False)
+    print(compared[compared["group"] == "all connector files"].round(3).to_string(index=False))

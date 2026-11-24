@@ -1,0 +1,29 @@
+group,model,malicious,benign,caught at 0.5,benign blocked at 0.5
+MCP tool descriptions,logistic regression,440,280,0.9863636363636363,0.9142857142857143
+MCP tool descriptions,DistilBERT,440,280,1.0,0.7428571428571429
+MCP tool descriptions,ProtectAI v2,440,280,0.2431818181818182,0.02857142857142857
+MCP tool descriptions,Horizon Guard,440,280,0.8727272727272727,0.05357142857142857
+MCP tool descriptions,Jev 1.14,440,280,0.5863636363636363,0.0
+MCP tool descriptions,Gemini Decision 1,440,280,0.6545454545454545,0.0
+MCP tool descriptions,"Jev 1.14, asked about purpose",440,280,0.9522727272727273,0.0
+"skill files, first set",logistic regression,104,203,1.0,0.9901477832512315
+"skill files, first set",DistilBERT,104,203,1.0,1.0
+"skill files, first set",ProtectAI v2,104,203,0.18269230769230768,0.04926108374384237
+"skill files, first set",Horizon Guard,104,203,0.5,0.03940886699507389
+"skill files, first set",Jev 1.14,104,203,0.9134615384615384,0.019704433497536946
+"skill files, first set",Gemini Decision 1,104,203,0.8269230769230769,0.0049261083743842365
+"skill files, first set","Jev 1.14, asked about purpose",104,203,0.7596153846153846,0.04433497536945813
+"skill files, other sources",logistic regression,769,495,0.988296488946684,0.9919191919191919
+"skill files, other sources",DistilBERT,769,495,1.0,1.0
+"skill files, other sources",ProtectAI v2,769,495,0.05071521456436931,0.1191919191919192
+"skill files, other sources",Horizon Guard,769,495,0.16124837451235371,0.15151515151515152
+"skill files, other sources",Jev 1.14,769,495,0.3159947984395319,0.06464646464646465
+"skill files, other sources",Gemini Decision 1,769,495,0.32769830949284784,0.022222222222222223
+"skill files, other sources","Jev 1.14, asked about purpose",769,495,0.5552665799739922,0.08080808080808081
+all connector files,logistic regression,1313,978,0.9885757806549885,0.9693251533742331
+all connector files,DistilBERT,1313,978,1.0,0.9263803680981595
+all connector files,ProtectAI v2,1313,978,0.12566641279512566,0.0787321063394683
+all connector files,Horizon Guard,1313,978,0.4265041888804265,0.10020449897750511
+all connector files,Jev 1.14,1313,978,0.45392231530845395,0.03680981595092025
+all connector files,Gemini Decision 1,1313,978,0.4767707539984768,0.012269938650306749
+all connector files,"Jev 1.14, asked about purpose",1313,978,0.7044935262757045,0.050102249488752554

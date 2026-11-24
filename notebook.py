@@ -1067,8 +1067,20 @@ variant.set_index(["group", "method"])[["malicious", "benign", "AUROC", "caught 
 # them left the result at 0.5 unchanged. A poisoned MCPTox tool is an invented tool added to a real
 # server, so its name is unlike its neighbors' names. The development and held-out files come
 # from the same sources. The name and stated purpose shown to the model are written by the same
-# author as the text, so an attacker can choose a name that makes the payload look expected. Not
-# run on Gemini Decision 1.
+# author as the text, so an attacker can choose a name that makes the payload look expected.
+#
+# **A second model.** Gemini Decision 1 was asked the same three questions on the 250 development
+# files only (`variants/gemini.py`, `results/question-variant-gemini.csv`). At 0.5 it catches 93%
+# of the poisoned tools, against 58% with the one question, and 72% of the malicious skill files,
+# against 47%, with 1 of 70 benign skill files blocked. The quoted-example wrapper of section 7
+# still takes it to zero on the 45 poisoned tools. These files are the ones the questions were
+# chosen on, with Jev 1.14's answers.
+#
+# **All models on the same files.** `results/comparison.csv` scores every model at 0.5 on the
+# 2,291 files outside the development set. Over all of them Jev 1.14 catches 45% of malicious
+# files with the one question and 70% with the three, with 3.7% and 5.0% of benign files blocked.
+# Gemini Decision 1 with the one question catches 48% and blocks 1.2%; Horizon Guard 43% and 10%;
+# ProtectAI v2 13% and 8%; DistilBERT 100% and 93%.
 #
 # The app offers this as a second deciding model, `Jev 1.14, asked about purpose`, beside the one
 # question.
