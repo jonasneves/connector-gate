@@ -5,6 +5,8 @@ primary test,DistilBERT,validation,497,55,1,389,0.9466666666666667
 primary test,DistilBERT,0.5,540,12,20,370,0.9712230215827338
 primary test,ProtectAI v2,validation,348,204,1,389,0.7724750277469479
 primary test,ProtectAI v2,0.5,477,75,11,379,0.9173076923076923
+primary test,Horizon Guard,validation,399,153,0,390,0.8391167192429022
+primary test,Horizon Guard,0.5,521,31,12,378,0.96036866359447
 primary test,Jev 1.14,validation,27,525,0,390,0.09326424870466321
 primary test,Jev 1.14,0.5,331,221,20,370,0.7331118493909191
 primary test,Gemini Decision 1,validation,57,495,2,388,0.18657937806873978
@@ -15,6 +17,8 @@ skills,DistilBERT,validation,124,0,222,1,0.5276595744680851
 skills,DistilBERT,0.5,124,0,223,0,0.5265392781316348
 skills,ProtectAI v2,validation,1,123,0,223,0.016
 skills,ProtectAI v2,0.5,25,99,12,211,0.3105590062111801
+skills,Horizon Guard,validation,17,107,0,223,0.24113475177304963
+skills,Horizon Guard,0.5,61,63,10,213,0.6256410256410256
 skills,Jev 1.14,validation,6,118,0,223,0.09230769230769231
 skills,Jev 1.14,0.5,113,11,4,219,0.9377593360995851
 skills,Gemini Decision 1,validation,29,95,0,223,0.3790849673202614
@@ -25,6 +29,8 @@ mcp,DistilBERT,validation,183,302,64,261,0.5
 mcp,DistilBERT,0.5,485,0,244,81,0.7990115321252059
 mcp,ProtectAI v2,validation,2,483,1,324,0.00819672131147541
 mcp,ProtectAI v2,0.5,117,368,8,317,0.3836065573770492
+mcp,Horizon Guard,validation,212,273,0,325,0.6083213773314203
+mcp,Horizon Guard,0.5,426,59,16,309,0.919093851132686
 mcp,Jev 1.14,validation,9,476,0,325,0.03643724696356275
 mcp,Jev 1.14,0.5,280,205,0,325,0.7320261437908496
 mcp,Gemini Decision 1,validation,44,441,0,325,0.166351606805293
@@ -35,7 +41,21 @@ deepset,DistilBERT,validation,121,142,43,356,0.5667447306791569
 deepset,DistilBERT,0.5,233,30,180,219,0.6893491124260355
 deepset,ProtectAI v2,validation,38,225,0,399,0.25249169435215946
 deepset,ProtectAI v2,0.5,109,154,4,395,0.5797872340425532
+deepset,Horizon Guard,validation,25,238,0,399,0.1736111111111111
+deepset,Horizon Guard,0.5,197,66,0,399,0.8565217391304348
 deepset,Jev 1.14,validation,19,244,0,399,0.1347517730496454
 deepset,Jev 1.14,0.5,136,127,3,396,0.6766169154228856
 deepset,Gemini Decision 1,validation,18,245,0,399,0.12811387900355872
 deepset,Gemini Decision 1,0.5,124,139,1,398,0.6391752577319587
+skillbench,logistic regression,validation,408,431,318,227,0.5214057507987221
+skillbench,logistic regression,0.5,830,9,541,4,0.751131221719457
+skillbench,DistilBERT,validation,795,44,536,9,0.7327188940092166
+skillbench,DistilBERT,0.5,839,0,545,0,0.7548358074673864
+skillbench,ProtectAI v2,validation,0,839,1,544,0.0
+skillbench,ProtectAI v2,0.5,45,794,64,481,0.0949367088607595
+skillbench,Horizon Guard,validation,2,837,0,545,0.0047562425683709865
+skillbench,Horizon Guard,0.5,135,704,87,458,0.2544769085768143
+skillbench,Jev 1.14,validation,11,828,0,545,0.02588235294117647
+skillbench,Jev 1.14,0.5,268,571,37,508,0.46853146853146854
+skillbench,Gemini Decision 1,validation,12,827,1,544,0.028169014084507043
+skillbench,Gemini Decision 1,0.5,275,564,11,534,0.4888888888888889

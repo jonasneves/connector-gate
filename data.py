@@ -1,4 +1,4 @@
-"""Downloads the four datasets at pinned revisions and writes them as one table, data/sets.parquet.
+"""Downloads the five datasets at pinned revisions and writes them as one table, data/sets.parquet.
 
 Columns: set, split, id, text, label (1 = malicious), kind.
 The primary set keeps its publisher's train, validation and test splits. Every row of a
@@ -21,6 +21,7 @@ OUT = ROOT / "data" / "sets.parquet"
 PRIMARY = ("neuralchemy/Prompt-injection-dataset", "7d70432dfcf47a821612cbf9d34e9d9e3ad20e75")
 SKILLS = ("TongxiQu/agent-skill-malware", "68717b9758e78f68679c89e993a855c9d7ccddcb")
 DEEPSET = ("deepset/prompt-injections", "4f61ecb038e9c3fb77e21034b22511b523772cdd")
+SKILLBENCH = ("ProtectSkills/MaliciousSkillBench", "d4b42ce5766a6e0359c987cf59c1007cb3795a90")
 MCPTOX = "https://raw.githubusercontent.com/zhiqiangwang4/MCPTox-Benchmark/630121b3275f74cc72d000a7a056e4d3c68648ef/"
 
 
@@ -53,8 +54,19 @@ def skills():
                          "label": (df["label"] == "malicious").astype(int), "kind": df["label"]})
 
 
+def skillbench():
+    """Skill files from MaliciousSkillBench: the test part of its source-disjoint split, which is three sources
+    (SkillHarm, ATR Skill Security Benchmark, SkillFortifyBench) and none of them the source of the skills set.
+    `kind` is the source and how the file came to be: wild, injected, backdoored, synthetic or test_fixture."""
+    df = pd.read_parquet(hub(SKILLBENCH, "primary.parquet"))
+    split = pd.read_parquet(hub(SKILLBENCH, "splits/source_disjoint.parquet"))
+    df = df[df["benchmark_id"].isin(split.loc[split["split"] == "test", "benchmark_id"])]
+    return pd.DataFrame({"set": "skillbench", "split": "unseen", "id": df["benchmark_id"], "text": df["skill_text"],
+                         "label": df["label"].astype(int), "kind": df["source_name"] + ", " + df["provenance"]})
+
+
 def mcp():
-    """MCP tool descriptions: MCPTox's poisoned ones, and the clean ones of the 45 real servers it was built on."""
+    """MCP tool descriptions: MCPTox's poisoned ones, and the clean ones of the real servers it was built on."""
     poisoned = [tool for server in mcptox("pure_tool.json") for tool in server.values()]
     rows = [{"id": tool["tool_address"], "text": tool["tool_content"], "label": 1, "kind": tool["paradigm"]}
             for tool in poisoned]
@@ -96,7 +108,7 @@ def clean(df):
 
 
 if __name__ == "__main__":
-    sets = clean(pd.concat([*primary(), skills(), mcp(), deepset()], ignore_index=True))
+    sets = clean(pd.concat([*primary(), skills(), mcp(), deepset(), skillbench()], ignore_index=True))
     sets.to_parquet(OUT, index=False)
     print(sets.groupby(["set", "split"], sort=False)["label"].agg(rows="size", malicious="sum").to_string())
     print(f"wrote {OUT.relative_to(ROOT)}")

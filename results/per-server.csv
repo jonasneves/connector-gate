@@ -1,0 +1,13 @@
+model,threshold,clean descriptions blocked,clean servers blocked,servers,of
+logistic regression,validation,0.20923076923076922,0.5581395348837209,24,43
+logistic regression,0.5,0.92,0.9302325581395349,40,43
+DistilBERT,validation,0.19692307692307692,0.32558139534883723,14,43
+DistilBERT,0.5,0.7507692307692307,0.9302325581395349,40,43
+ProtectAI v2,validation,0.003076923076923077,0.023255813953488372,1,43
+ProtectAI v2,0.5,0.024615384615384615,0.13953488372093023,6,43
+Horizon Guard,validation,0.0,0.0,0,43
+Horizon Guard,0.5,0.04923076923076923,0.18604651162790697,8,43
+Jev 1.14,validation,0.0,0.0,0,43
+Jev 1.14,0.5,0.0,0.0,0,43
+Gemini Decision 1,validation,0.0,0.0,0,43
+Gemini Decision 1,0.5,0.0,0.0,0,43

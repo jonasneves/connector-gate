@@ -1,0 +1,13 @@
+model,threshold,benign chunks blocked,benign files blocked
+logistic regression,validation,0.19844559585492227,0.5695067264573991
+logistic regression,0.5,0.9222797927461139,0.9910313901345291
+DistilBERT,validation,0.9025906735751296,0.9955156950672646
+DistilBERT,0.5,1.0,1.0
+ProtectAI v2,validation,0.0,0.0
+ProtectAI v2,0.5,0.024870466321243522,0.053811659192825115
+Horizon Guard,validation,0.0,0.0
+Horizon Guard,0.5,0.006735751295336788,0.04484304932735426
+Jev 1.14,validation,0.0,0.0
+Jev 1.14,0.5,0.00466321243523316,0.017937219730941704
+Gemini Decision 1,validation,0.0,0.0
+Gemini Decision 1,0.5,0.0005181347150259067,0.004484304932735426
