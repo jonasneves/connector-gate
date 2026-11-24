@@ -277,6 +277,7 @@ Findings 4 and 9 to 14 rest on models, data and analyses added on November 23, 2
 12. The false blocks on skill files are not an effect of taking the highest-scoring chunk. DistilBERT blocks 90% of single chunks of benign skill files at its validation threshold and the logistic regression 20%, so one chunk is usually enough. The other candidate cause, the change from 56-character training prompts to 1,000-character chunks, was not isolated.
 13. Per server, the trained models block nearly every clean server. At 0.5 the two trained models block 40 of 43 clean servers, Horizon Guard 8, ProtectAI v2 6, and the decision models none.
 14. At a registry's base rate the blocks are mostly benign files. With the skills set's rates at 0.5, Jev 1.14 blocks 14.5 of the 16 malicious files in 10,000 and 179 benign files, 13 blocks for each malicious one, and Gemini Decision 1 blocks 13.5 and 45. With the skillbench set's rates Jev 1.14 blocks 5 and 678, and Gemini Decision 1 blocks 5 and 202.
+**Follow-up.** Added November 23 after the misses were read, Jev 1.14 only (notebook section 11). Each chunk is sent with its name and stated purpose and three questions are asked. Questions, scoring rule and thresholds were fixed on a 250-file development set, and the other 2,291 connector files were scored once. Held out: MCP descriptions caught at 0.5 go from 58.6% to 95.2% with 0.4% of clean ones blocked; second skills set, at the development threshold, 23.7% to 48.9% with benign blocked 4.8% and 5.1%; first skills set 83.7% to 73.1%. The app, the deck's briefing slides and findings 1 to 14 use the one question in `gate.QUESTION`.
 
 ## Limits
 
@@ -365,6 +366,7 @@ The app accepts a JSON tool list (one decision per tool) or any other text such 
 | `data.py` | Downloads and cleans the five datasets. |
 | `gate.py` | Chunking, scoring, model loaders (`baseline`, `distilbert`, `published`), the pinned sources `PROTECTAI` and `HORIZON`, `QUESTION`, `EVASION_NOTE` and `EVASION_VARIANTS`. Shared by the notebook and the app. |
 | `decision.py` | Client for the two hosted decision models. |
+| `variants/` | Follow-up on what the hosted model is asked: `dev.py` (development set and loop), `explore.py` (techniques compared on it), `heldout.py` (the one held-out run, writes `results/question-variant.csv`), `scores/` (saved answers). `results/variants/` holds the first two rewordings. |
 | `app.py` | Gradio app. |
 | `deploy.sh`, `connector-gate.container` | Deploys the app to the Duke VM, and the Quadlet unit that runs the container there. |
 | `slides.pptx` | Project slides, built by `slides/build.js` from `results/`; `slides/clips/` holds the captures of cited pages. |

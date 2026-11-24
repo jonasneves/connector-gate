@@ -53,6 +53,6 @@ if __name__ == "__main__":
                              "caught at it": (s[y == 1] > cut).mean() if (y == 1).any() else np.nan,
                              "benign blocked at it": (s[y == 0] > cut).mean() if (y == 0).any() else np.nan})
     out = pd.DataFrame(rows)
-    out.to_csv(D.HERE / "heldout.csv", index=False)
+    out.to_csv(D.ROOT / "results" / "question-variant.csv", index=False)
     pd.set_option("display.width", 250)
     print(out.round(3).to_string(index=False))
