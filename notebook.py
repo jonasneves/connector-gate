@@ -1014,7 +1014,8 @@ latency.set_index("model").round(4)
 # second way of asking on Jev 1.14 only. It is a follow-up and does not replace the results above.
 #
 # **What changes.** Each chunk is sent with the name and stated purpose it came with: for an MCP
-# tool, its server, name and arguments; for a skill file, the name and description in its header.
+# tool, its server, its name and the names of the server's other tools; for a skill file, the name
+# and description in its header.
 # Three questions are asked in one request (`variants/dev.py`):
 #
 # - *purpose*: does the text tell the agent to do something a tool or skill with that name and
@@ -1028,9 +1029,9 @@ latency.set_index("model").round(4)
 # over the first two for a skill file.
 #
 # **How it was chosen.** A development set of 250 files was drawn from the three connector sets
-# with a fixed seed. Wordings and nine other techniques were compared on it
+# with a fixed seed. Wordings and eight other techniques were compared on it
 # (`variants/explore.py`). The questions, the scoring rule and the thresholds were committed, and
-# the other 2,291 files were then scored once (`variants/heldout.py`). The table is that held-out
+# the other 2,291 files were then scored (`variants/heldout.py`). The table is that held-out
 # result. Its threshold is the one that blocked 2 benign development files of the same kind.
 
 # %%
@@ -1043,19 +1044,28 @@ variant.set_index(["group", "method"])[["malicious", "benign", "AUROC", "caught 
     {"AUROC": "{:.3f}", "threshold from development": "{:.2f}"} | {c: "{:.1%}" for c in ("caught at 0.5", "benign blocked at 0.5", "caught at it", "benign blocked at it")}, na_rep="")
 
 # %% [markdown]
-# **Reading.** On held-out MCP tool descriptions the three questions catch 95% at 0.5 with one
+# **Reading.** On held-out MCP tool descriptions the three questions catch 95% at 0.5 with no
 # clean description blocked, where the one question caught 59%. On the second skills set recall
-# at the development threshold doubles, from 24% to 49%, with the share of benign files blocked
-# nearly unchanged. On the first skills set recall falls from 84% to 73%: that malware tells the
-# agent to install a named program, a behavior the one question names and the three do not ask
-# about. Half of the malicious files in the second skills set are still missed.
+# rises from 32% to 56% at 0.5, with benign files blocked going from 6.5% to 8.1%, and from 24%
+# to 49% at the development threshold, with 4.8% and 5.1% blocked. On the first skills set recall
+# falls: 91% to 76% at 0.5, and 84% to 73% at the development threshold. That malware tells the
+# agent to install a named program, which the one question names and the three do not ask about;
+# whether that explains the fall was not tested. Half of the malicious files in the second skills
+# set are still missed.
 #
 # On the 45 poisoned tool descriptions of the development set, the purpose question alone was
-# also run against the six wrappers of section 7. With the attacker's pick of wrapper it caught
-# 78% at 0.5, against 42% for the one question, and the quoted-example wrapper that takes Gemini
-# Decision 1 to zero did not lower it.
+# also run against the six wrappers of section 7. At 0.5 it caught 84% as written and 78% with
+# the attacker's pick of wrapper; the one question caught 47% and 42%. The quoted-example wrapper
+# that takes Gemini Decision 1 to zero did not lower it.
 #
-# **Limits.** One model, and one run of it; rescoring the same question on the development set
-# moved a recall by 3 points. The development and held-out files come from the same sources.
-# The name and stated purpose shown to the model are written by the same author as the text, so
-# an attacker can choose a name that makes the payload look expected. Not run on Gemini Decision 1.
+# **Limits.** One model. Its answers vary between runs: the purpose question's recall on the
+# development skills at 0.5 was between 79% and 84% over four runs, which also differed in the
+# questions asked beside it. Before the development set was drawn, two rewordings of the question
+# had been scored on every connector file (`variants/first_pass.py`), and one of them asked about
+# stated purpose, so the held-out files were not unseen in that sense. The MCP result was scored
+# twice: the first frame showed arguments, which the data has for clean tools only, and removing
+# them left the result at 0.5 unchanged. A poisoned MCPTox tool is an invented tool added to a real
+# server, so its name is unlike its neighbors' names. The development and held-out files come
+# from the same sources. The name and stated purpose shown to the model are written by the same
+# author as the text, so an attacker can choose a name that makes the payload look expected. Not
+# run on Gemini Decision 1.

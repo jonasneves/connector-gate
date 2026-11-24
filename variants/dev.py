@@ -71,7 +71,8 @@ def with_context(dev):
                 server, name, args = tool["server_name"], tool["tool_name"], ""
             else:
                 server, name = row["id"].split("/", 1)
-                args = arguments.get(row["id"], "")
+                # MCPTox gives arguments for clean tools only. Showing them would mark the label, so no tool gets them.
+                args = ""
             return {"server": server, "name": name, "arguments": args, "siblings": [t for t in siblings.get(server, []) if t != name]}
         head = re.match(r"\s*---\n(.*?)\n---", row["text"], flags=re.S)
         fields = dict(re.findall(r"^(name|description):\s*(.*)$", head.group(1), flags=re.M)) if head else {}

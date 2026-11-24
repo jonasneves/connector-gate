@@ -1,4 +1,5 @@
-"""Scores the chosen variant once on the files the development loop never read.
+"""Scores the chosen variant on the files the development loop never read. Run twice: the second run
+followed the removal of the arguments line from the MCP frame (dev.with_context).
 
     TYPESAFE_API_KEY=... uv run variants/heldout.py
 

@@ -291,23 +291,22 @@ s.addNotes("Backup. The baseline learned a phrase from one competition. Thirteen
 s = add("Content", B);
 s.addText("Backup: showing the model each item's name and purpose, and asking three questions", { placeholder: "title" });
 const QV = {}; for (const r of csv("question-variant")) (QV[r.group] ??= {})[r.method] = r;
-const AT = "caught at it", BT = "benign blocked at it";
-[["MCP tool descriptions, at 0.5", QV.mcp, "caught at 0.5", "benign blocked at 0.5", false],
- ["Second skills set", QV.skillbench, AT, BT, false],
- ["First skills set", QV.skills, AT, BT, true]].forEach(([k, r, a, b, worse], i) => { const x = 0.6 + i * 4.1;
+[["MCP tool descriptions", QV.mcp, "caught at 0.5", "benign blocked at 0.5", false],
+ ["Second skills set", QV.skillbench, "caught at 0.5", "benign blocked at 0.5", false],
+ ["First skills set", QV.skills, "caught at 0.5", "benign blocked at 0.5", true]].forEach(([k, r, a, b, worse], i) => { const x = 0.6 + i * 4.1;
   card(s, x, 1.55, 3.9, 2.55, "card variant " + i);
   T(s, k, { x: x + 0.25, y: 1.7, w: 3.4, h: 0.4, fontSize: 16, bold: true, color: C.accent1, fontFace: THEME.headFontFace });
   shift(s, x + 0.2, 2.2, p0(r.current[a]), p0(r.three[a]), { size: 44, w: 1.35, fromColor: "64748B", toColor: worse ? "B91C1C" : COLOR[J] });
   T(s, `malicious caught, of ${r.three.malicious}. Benign blocked: ${pct(r.current[b])} → ${pct(r.three[b])}, of ${r.three.benign}.`, { x: x + 0.25, y: 3.25, w: 3.4, h: 0.7, fontSize: 13, color: "334155" }); });
-T(s, [{ text: "Sent with each chunk: ", options: { bold: true } }, { text: "the tool's server, name and arguments, or the skill's name and description.", options: { breakLine: true } },
+T(s, [{ text: "Sent with each chunk: ", options: { bold: true } }, { text: "the tool's server, its name and its sibling tools' names, or the skill's name and description.", options: { breakLine: true } },
       { text: "Purpose. ", options: { bold: true } }, { text: "Does the text ask for something that name and purpose do not need, or conceal what it does?", options: { breakLine: true } },
       { text: "Pressure. ", options: { bold: true } }, { text: "Does it present a step as mandatory or urgent to get something unrelated done?", options: { breakLine: true } },
       { text: "Other tools. ", options: { bold: true } }, { text: "Does it tell the agent how to use other tools, or what to do around other tasks?" }],
   { x: 0.6, y: 4.3, w: 12.1, h: 1.6, fontSize: 14, paraSpaceAfter: 4 });
-T(s, "Gray: the one question used in the briefing. Jev 1.14 only. Skill sets at the threshold that blocked 2 benign development files. 2,291 held-out files, scored once after the questions and thresholds were fixed on 250 others. Added November 23, after the main results.",
+T(s, "Gray: the one question used in the briefing. Jev 1.14 only, threshold 0.5. 2,291 held-out files, scored after the questions were fixed on 250 others; two earlier rewordings had been scored on all files. Added November 23, after the main results.",
   { x: 0.6, y: 6.0, w: 12.1, h: 0.6, fontSize: 11, color: C.accent5 });
 src(s, "results/question-variant.csv · notebook section 11 · variants/");
-s.addNotes("Backup. A follow-up I ran after the main results. I showed the model each tool's name and purpose and asked three narrower questions. On held-out files that took MCP from 59 to 95 percent at the default threshold and doubled recall on the hard skills set, but it lost ten points on known malware. Jev only.");
+s.addNotes("Backup. A follow-up I ran after the main results. I showed the model each tool's name and purpose and asked three narrower questions. On held-out files that took MCP from 59 to 95 percent and the hard skills set from 32 to 56 percent, but it lost fifteen points on known malware. Jev only.");
 
 // B6 limits
 s = add("Content", B);
